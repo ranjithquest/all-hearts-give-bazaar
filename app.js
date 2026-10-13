@@ -709,7 +709,7 @@ function createTableRowMarkup(item) {
           <strong>${escapeHtml(item.contributor)}</strong>
         </div>
       </td>
-      <td data-label="Location"><strong>${escapeHtml(item.city === "Remote" ? "Anywhere" : item.city)}</strong></td>
+      <td data-label="Location"><strong>${escapeHtml(item.city === "Remote" ? "Anywhere" : cityLabel(item.city))}</strong></td>
       <td data-label="Items or seats"><span>${supply}</span></td>
       <td data-label="Starting bid"><strong class="table-bid">₹${Number(item.startingBid || 500).toLocaleString("en-IN")}</strong></td>
       <td>
@@ -784,6 +784,10 @@ const KNOWN_HOME_CITIES = {
   stutikamboj: "Noida"
 };
 let savedHomeCity = "";
+
+function cityLabel(city) {
+  return city === "Bengaluru" ? "Bangalore" : city;
+}
 
 function defaultCity() {
   if (LOT_CITIES.includes(savedHomeCity)) return savedHomeCity;
@@ -961,7 +965,7 @@ async function saveInlineEntry(targetStatus) {
     return;
   }
   if (targetStatus === "pending" && (!title || !description || !contributor || !startingBid || !quantity)) {
-    showToast(value("contributorMode") === "team" && !contributor ? "Add at least one teammate alias." : "Complete the title, short pitch, contributor, supply and starting bid.");
+    showToast(value("contributorMode") === "team" && !contributor ? "Add at least one teammate alias." : "Complete the title, short pitch, starting bid, and items or seats.");
     return;
   }
 
@@ -1109,7 +1113,7 @@ function renderAdmin() {
         <h3>${escapeHtml(item.title)}</h3>
         <p>
           <span class="status-pill ${item.status === "pending" ? "status-pill--pending" : ""}">${item.status}</span>
-          ${escapeHtml(item.contributor)} · ${escapeHtml(item.city)} · ${categoryDetails[item.category]?.label || "Other"}
+          ${escapeHtml(item.contributor)} · ${escapeHtml(cityLabel(item.city))} · ${categoryDetails[item.category]?.label || "Other"}
         </p>
       </div>
       <div class="admin-item__actions">
@@ -1232,7 +1236,7 @@ function renderAuctionItem() {
   elements.auctionTitle.textContent = item.title;
   elements.auctionContributor.textContent = item.team && item.team !== item.contributor ? `${item.contributor} (${item.team})` : item.contributor;
   elements.auctionDescription.textContent = item.description;
-  elements.auctionLocation.textContent = item.city === "Remote" ? "Anywhere / remote" : item.city;
+  elements.auctionLocation.textContent = item.city === "Remote" ? "Anywhere / remote" : cityLabel(item.city);
   elements.auctionQuantity.textContent = item.quantity;
   elements.auctionStartingBid.textContent = startingBid.toLocaleString("en-IN");
   elements.auctionBidFormat.textContent = `#${lotNumber === "—" ? "lot" : lotNumber} - ${startingBid}`;
