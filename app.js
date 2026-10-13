@@ -858,7 +858,7 @@ function createInlineEntryMarkup() {
           <input data-inline-field="title" maxlength="70" placeholder="e.g. A Sunday pottery session for two" value="${escapeHtml(draft.title || "")}">
         </label>
         <label class="entry-field entry-field--full"><span>Short pitch</span>
-          <textarea data-inline-field="description" maxlength="220" rows="2" placeholder="One short line to help the host present it">${escapeHtml(draft.description || "")}</textarea>
+          <textarea data-inline-field="description" maxlength="220" rows="2" placeholder="Make it irresistible. What makes it special? e.g. Hand-throw your own mug and take it home, all in one cosy Sunday session">${escapeHtml(draft.description || "")}</textarea>
         </label>
         <label class="entry-field"><span>Starting bid (₹)</span>
           <input data-inline-field="startingBid" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 500" value="${escapeHtml(draft.startingBid || "")}">
