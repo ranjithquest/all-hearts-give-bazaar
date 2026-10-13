@@ -3394,6 +3394,7 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 }
 @media (max-width: 760px) {
   .hero__logo-stage { margin-top: 14px; padding: 48px 0 30px; }
+  .hero__logo-heart { width: min(68vw, 280px); }
 }
 
 /* Lots list: show 5 at a time, scroll the rest */
