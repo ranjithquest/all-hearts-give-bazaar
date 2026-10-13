@@ -3435,3 +3435,31 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
     align-content: start;
   }
 }
+
+/* Mobile: heart is in-flow (same grid cell as the wordmark) so it can never spill onto nearby text */
+@keyframes heart-beat-flow {
+  0%, 100% { transform: rotate(-6deg) scale(1); }
+  50% { transform: rotate(-6deg) scale(1.04); }
+}
+@media (max-width: 760px) {
+  .hero__logo-stage {
+    display: grid;
+    grid-template: 1fr / 1fr;
+    place-items: center;
+    margin-top: 18px;
+    padding: 0;
+  }
+  .hero__logo-stage > * { grid-area: 1 / 1; }
+  .hero__logo-heart {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: min(68vw, 280px);
+    transform: rotate(-6deg);
+    animation-name: heart-beat-flow;
+  }
+  .hero__content .hero__stats { margin-top: 26px; }
+}
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+  .hero__logo-heart { animation: none; }
+}
