@@ -3183,6 +3183,7 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 @media (max-width: 760px) {
   .hero { padding-top: 24px; }
   .hero__logo-stage { margin-top: 6px; padding: 40px 0 26px; }
+  .hero__logo-stage .hero__logo { width: min(84vw, 360px); margin-inline: auto; }
   .hero__status { font-size: 13px; padding: 7px 14px; }
 }
 @media (min-width: 761px) {
@@ -3384,4 +3385,13 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 }
 @media (max-width: 760px) {
   .hero__content .hero__stats { margin-top: 18px; }
+}
+
+/* Heart sits lower with clear space below the Studio+91 logo */
+@media (min-width: 761px) {
+  .hero__logo-stage { margin-top: 28px; padding: 96px 0 64px; }
+  .hero__logo-heart { top: 54%; }
+}
+@media (max-width: 760px) {
+  .hero__logo-stage { margin-top: 14px; padding: 48px 0 30px; }
 }
