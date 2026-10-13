@@ -585,8 +585,29 @@ function renderBoard() {
   elements.tableBody.innerHTML = visibleContributions.map(createTableRowMarkup).join("");
   elements.emptyState.hidden = visibleContributions.length > 0;
   elements.tableWrap.hidden = visibleContributions.length === 0;
-
+  fitLotList();
 }
+
+const VISIBLE_LOT_ROWS = 5;
+function fitLotList() {
+  const wrap = elements.tableWrap;
+  const rows = elements.tableBody.rows;
+  const isMobile = window.matchMedia("(max-width: 760px)").matches;
+  if (isMobile || rows.length <= VISIBLE_LOT_ROWS || wrap.hidden) {
+    wrap.classList.remove("is-capped");
+    wrap.style.maxHeight = "";
+    return;
+  }
+  wrap.classList.add("is-capped");
+  wrap.style.maxHeight = "";
+  const top = wrap.getBoundingClientRect().top;
+  const bottom = rows[VISIBLE_LOT_ROWS - 1].getBoundingClientRect().bottom;
+  wrap.style.maxHeight = `${Math.ceil(bottom - top + 12)}px`;
+}
+if (window.ResizeObserver) {
+  new ResizeObserver(() => fitLotList()).observe(elements.tableBody);
+}
+window.addEventListener("resize", fitLotList);
 
 function lotImages(item) {
   if (Array.isArray(item.images) && item.images.length) return item.images;
