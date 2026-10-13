@@ -3295,9 +3295,8 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 
 /* Mobile: lots as cards */
 @media (max-width: 760px) {
-  .city-filter-chips { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; margin-left: -20px; margin-right: -20px; padding: 2px 20px 4px; scrollbar-width: none; }
-  .city-filter-chips::-webkit-scrollbar { display: none; }
-  .city-filter-chips button { flex: 0 0 auto; }
+  .city-filter-chips { flex-wrap: nowrap; justify-content: center; gap: 6px; }
+  .city-filter-chips button { flex: 0 1 auto; min-width: 0; padding: 8px 10px; font-size: 11.5px; white-space: nowrap; }
   .auction-table-wrap { overflow: visible; margin-right: 0; padding: 0 4px 0 0; }
   .auction-table, .auction-table tbody { display: block; min-width: 0; width: 100%; }
   .auction-table thead { display: none; }
@@ -3354,4 +3353,11 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
   .table-photo-count { right: 8px; bottom: 8px; padding: 3px 9px; font-size: 12px; }
   .table-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 14px; }
   .table-row-actions button { min-height: 36px; padding: 6px 2px; font-size: 14px; }
+}
+@media (max-width: 760px) {
+  .hero { padding-bottom: 8px !important; }
+  .board-section { padding-top: 36px !important; }
+  .donate-message { padding-top: 0 !important; }
+  .donate-message__title { font-size: clamp(56px, 17vw, 76px) !important; white-space: normal !important; line-height: .92 !important; text-align: center; }
+  .entry-card textarea[data-inline-field="description"], .entry-form textarea[data-inline-field="description"] { min-height: 100px; }
 }
