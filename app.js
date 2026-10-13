@@ -873,6 +873,7 @@ function createInlineEntryMarkup() {
       <div class="entry-card__actions">
         ${editingLiveLot ? `<button type="button" class="entry-delete" data-delete-own-lot="${escapeHtml(editingDraftId)}">Delete</button>` : ""}
         <span class="entry-card__spacer"></span>
+        ${editingDraftId ? `<button type="button" data-inline-action="cancel">Cancel</button>` : ""}
         <button type="button" data-inline-action="preview">Preview</button>
         <button type="button" data-inline-action="submit">${editingLiveLot ? "Save changes" : "Submit lot"}</button>
       </div>
@@ -887,6 +888,7 @@ function showInlineEntry() {
 }
 
 function closeInlineEntry() {
+  const wasEditing = Boolean(editingDraftId);
   const discarded = editingDraftId ? [] : inlineImages;
   editingDraftId = null;
   editingLiveLot = false;
@@ -896,7 +898,7 @@ function closeInlineEntry() {
   discarded.forEach((image) => vibeStorage?.images.delete(image.key).catch(() => {}));
   inlineEntryOpen = true;
   renderBoard();
-  showToast("Form cleared.");
+  showToast(wasEditing ? "Edit cancelled. No changes saved." : "Form cleared.");
 }
 
 async function persistDraft(contribution) {

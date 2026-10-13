@@ -3288,3 +3288,7 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 .entry-link--corner { position: absolute; top: -4px; right: 0; }
 .entry-field > .entry-contributor, .entry-field > .entry-team { margin-top: 10px; }
 .entry-contributor--you { flex-wrap: wrap; row-gap: 4px; }
+.entry-card__actions button[data-inline-action="cancel"] { padding: 0 8px; color: #3d3d3d; text-decoration: underline; text-underline-offset: 3px; box-shadow: none; }
+@media (max-width: 520px) {
+  .entry-card__actions button[data-inline-action="cancel"] { order: 1; min-height: 32px; }
+}
