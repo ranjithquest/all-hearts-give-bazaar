@@ -3263,3 +3263,28 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 .board-bidding strong { font-family: "Honk", Impact, sans-serif; font-palette: --signup-bazaar; font-variation-settings: "MORF" 15, "SHLN" 65; font-weight: 400; letter-spacing: -.02em; line-height: .9; font-size: clamp(48px, 8vw, 104px); color: inherit; }
 .board-bidding strong { margin: 6px 0 10px; }
 .support-section__cta { border-radius: 12px; }
+.memory-lightbox__frame { position: relative; width: fit-content; max-width: 100%; margin: 0 auto; }
+.memory-lightbox__frame img { width: auto; max-width: 100%; }
+.memory-lightbox__raised { left: 20px; bottom: 20px; font-size: 16px; padding: 6px 12px; }
+.memory-lightbox__raised small { font-size: 12px; }
+@media (max-width: 760px) {
+  .memory-lightbox__raised { left: 12px; bottom: 12px; font-size: 13px; padding: 4px 9px; }
+}
+.entry-field:has(> .entry-link--corner) { position: relative; }
+.entry-link {
+  margin-left: 6px;
+  padding: 4px 0;
+  border: 0;
+  color: #cf043b;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.entry-link:hover { color: #a2032e; }
+.entry-link--corner { position: absolute; top: -4px; right: 0; }
+.entry-field > .entry-contributor, .entry-field > .entry-team { margin-top: 10px; }
+.entry-contributor--you { flex-wrap: wrap; row-gap: 4px; }

@@ -833,15 +833,13 @@ function createInlineEntryMarkup() {
         <div class="entry-field entry-field--full"><span>Contributed by</span>
           <input type="hidden" data-inline-field="contributorMode" value="${mode}">
           <input type="hidden" data-inline-field="teamMembers" value="${escapeHtml(draft.teamMembers || "")}">
-          <div class="entry-chips" role="radiogroup" aria-label="Contributed by">
-            <button type="button" role="radio" class="entry-chip" data-contributor-mode="you" aria-checked="${mode === "you"}">You</button>
-            <button type="button" role="radio" class="entry-chip" data-contributor-mode="team" aria-checked="${mode === "team"}">Group</button>
-          </div>
           ${mode === "you" ? `
           <div class="entry-contributor entry-contributor--you">
             <span class="entry-contributor__avatar">${escapeHtml(initials(viewerName || "You"))}${viewerEmail ? `<img src="/api/avatar/${encodeURIComponent(viewerEmail.toLowerCase())}" alt="" onerror="this.remove()">` : ""}</span>
             <strong>${escapeHtml(viewerName || "You")}</strong>
+            <button type="button" class="entry-link" data-contributor-mode="team">Change to group</button>
           </div>` : `
+          <button type="button" class="entry-link entry-link--corner" data-contributor-mode="you">Change to just me</button>
           <div class="entry-team">
             <input data-team-member-input aria-label="Add teammate by name or Microsoft alias" placeholder="Type a name or alias, e.g. Abhishek" autocapitalize="off" spellcheck="false" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="teamSuggest">
             <div class="entry-suggest" id="teamSuggest" role="listbox" data-team-suggest hidden></div>
@@ -1351,11 +1349,12 @@ function showToast(message) {
 
 function updateCountdown() {
   if (!elements.countdownDays) return;
-  const eventTime = new Date("2026-10-23T15:00:00+05:30").getTime();
-  const now = Date.now();
-  const days = Math.max(0, Math.ceil((eventTime - now) / 86400000));
+  const eventDay = Date.UTC(2026, 9, 23) / 86400000;
+  const todayIst = Math.floor((Date.now() + 5.5 * 3600000) / 86400000);
+  const days = Math.max(0, eventDay - todayIst);
   elements.countdownDays.textContent = days;
 }
+setInterval(updateCountdown, 60000);
 
 document.querySelectorAll("[data-open-form]").forEach((button) => {
   button.addEventListener("click", showInlineEntry);
@@ -1791,6 +1790,7 @@ const memoryTrack = document.querySelector("#memoryTrack");
 const memoryLightbox = document.querySelector("#memoryLightbox");
 const memoryLightboxImage = document.querySelector("#memoryLightboxImage");
 const memoryLightboxCaption = document.querySelector("#memoryLightboxCaption");
+const memoryLightboxRaised = document.querySelector("#memoryLightboxRaised");
 let memoryIndex = 0;
 
 function renderMemories() {
@@ -1811,7 +1811,9 @@ function showMemory(index) {
   const lot = lastYearLots[memoryIndex];
   memoryLightboxImage.src = lot.full;
   memoryLightboxImage.alt = `${lot.title}, a lot from GIVE Bazaar 2025`;
-  memoryLightboxCaption.textContent = `${lot.title} · ${lot.raised ? `${raisedLabel(lot)} · ` : ""}${memoryIndex + 1} of ${lastYearLots.length}`;
+  memoryLightboxCaption.textContent = `${lot.title} · ${memoryIndex + 1} of ${lastYearLots.length}`;
+  memoryLightboxRaised.hidden = !lot.raised;
+  memoryLightboxRaised.innerHTML = lot.raised ? `Sold for ${formatRupees(lot.raised)}${lot.bids.length > 1 ? ` <small>× ${lot.bids.length} bids</small>` : ""}` : "";
   if (!memoryLightbox.open) memoryLightbox.showModal();
 }
 

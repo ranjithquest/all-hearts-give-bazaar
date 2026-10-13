@@ -37,7 +37,7 @@
           <img class="hero__logo" src="give-bazaar-logo.png" alt="GIVE Bazaar">
         </div>
         <div class="hero__stats" aria-label="GIVE Bazaar event details">
-          <div><strong id="countdownDays">11</strong><span>days to go</span></div>
+          <div><strong id="countdownDays">10</strong><span>days to go</span></div>
           <div><strong>3</strong><span>locations</span></div>
         </div>
         <div class="hero__magic"><button class="button button--primary hero__cta" type="button" data-hero-add-lot>Add your lot</button></div>
@@ -312,7 +312,10 @@
     <button class="memory-lightbox__close" type="button" data-close-memory aria-label="Close">×</button>
     <button class="memory-lightbox__nav memory-lightbox__nav--prev" type="button" data-memory-step="-1" aria-label="Previous lot">‹</button>
     <figure>
-      <img id="memoryLightboxImage" alt="">
+      <div class="memory-lightbox__frame">
+        <img id="memoryLightboxImage" alt="">
+        <span class="memory-card__raised memory-lightbox__raised" id="memoryLightboxRaised" hidden></span>
+      </div>
       <figcaption id="memoryLightboxCaption"></figcaption>
     </figure>
     <button class="memory-lightbox__nav memory-lightbox__nav--next" type="button" data-memory-step="1" aria-label="Next lot">›</button>
@@ -355,7 +358,7 @@
       <div class="auction-pattern" aria-hidden="true"></div>
       <header class="auction-header">
         <div class="auction-brand"><img src="heart.png" alt=""><strong>STUDIO+91 GIVE BAZAAR</strong><small>LIVE AUCTION</small></div>
-        <div class="auction-preview-brand"><img src="header-heart.png" alt=""><strong>STUDIO+91 GIVE BAZAAR</strong></div>
+        <div class="auction-preview-brand brand"><span class="brand__wordmark">STUDIO+91 GIVE</span></div>
         <div class="auction-progress"><span id="auctionProgress">LOT 1 OF 12</span></div>
         <button class="auction-close" type="button" data-close-auction aria-label="Close auction mode">×</button>
       </header>
