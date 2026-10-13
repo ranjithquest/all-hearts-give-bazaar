@@ -705,8 +705,8 @@ function createTableRowMarkup(item) {
       </td>
       <td data-label="Contributed by">
         <div class="table-contributor">
-          <span>${escapeHtml(initials(item.contributor))}${(item.avatarEmail || item.email) ? `<img src="/api/avatar/${encodeURIComponent((item.avatarEmail || item.email).toLowerCase())}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
-          <strong>${escapeHtml(item.contributor)}</strong>
+          <span>${escapeHtml(initials(contributorDisplay(item)))}${(item.avatarEmail || item.email) ? `<img src="/api/avatar/${encodeURIComponent((item.avatarEmail || item.email).toLowerCase())}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
+          <strong>${escapeHtml(contributorDisplay(item))}</strong>
         </div>
       </td>
       <td data-label="Location"><strong>${escapeHtml(item.city === "Remote" ? "Anywhere" : cityLabel(item.city))}</strong></td>
@@ -751,6 +751,14 @@ function rosterMatches(query, exclude = []) {
   return STUDIO_ROSTER
     .filter(([name, alias]) => !taken.has(alias) && (alias.startsWith(q) || name.toLowerCase().split(/\s+/).some((part) => part.startsWith(q)) || name.toLowerCase().startsWith(q)))
     .slice(0, 6);
+}
+
+function contributorDisplay(item) {
+  if (item.isExample) return item.contributor;
+  if (item.team) return item.team.split(",").map((m) => rosterName(m.trim())).filter(Boolean).join(", ");
+  const owner = String(item.email || "").split("@")[0].toLowerCase();
+  const known = STUDIO_ROSTER.find(([, alias]) => alias === owner);
+  return known ? known[0] : item.contributor;
 }
 
 function rosterName(alias) {
@@ -1113,7 +1121,7 @@ function renderAdmin() {
         <h3>${escapeHtml(item.title)}</h3>
         <p>
           <span class="status-pill ${item.status === "pending" ? "status-pill--pending" : ""}">${item.status}</span>
-          ${escapeHtml(item.contributor)} · ${escapeHtml(cityLabel(item.city))} · ${categoryDetails[item.category]?.label || "Other"}
+          ${escapeHtml(contributorDisplay(item))} · ${escapeHtml(cityLabel(item.city))} · ${categoryDetails[item.category]?.label || "Other"}
         </p>
       </div>
       <div class="admin-item__actions">
@@ -1234,7 +1242,7 @@ function renderAuctionItem() {
   elements.auctionProgress.textContent = auctionPreviewItems ? "SLIDE PREVIEW" : `LOT ${auctionIndex + 1} OF ${items.length}`;
   elements.auctionLotNumber.textContent = `#${lotNumber}`;
   elements.auctionTitle.textContent = item.title;
-  elements.auctionContributor.textContent = item.team && item.team !== item.contributor ? `${item.contributor} (${item.team})` : item.contributor;
+  elements.auctionContributor.textContent = contributorDisplay(item);
   elements.auctionDescription.textContent = item.description;
   elements.auctionLocation.textContent = item.city === "Remote" ? "Anywhere / remote" : cityLabel(item.city);
   elements.auctionQuantity.textContent = item.quantity;
