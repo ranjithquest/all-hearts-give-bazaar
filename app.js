@@ -698,11 +698,11 @@ function createTableRowMarkup(item) {
       <td data-label="Contributed by">
         <div class="table-contributor">
           <span>${escapeHtml(initials(item.contributor))}${(item.avatarEmail || item.email) ? `<img src="/api/avatar/${encodeURIComponent((item.avatarEmail || item.email).toLowerCase())}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
-          <strong>${escapeHtml(item.contributor)}${item.team && item.team !== item.contributor ? `<small class="table-team">${escapeHtml(item.team)}</small>` : ""}</strong>
+          <strong>${escapeHtml(item.contributor)}</strong>
         </div>
       </td>
-      <td data-label="Available in"><strong>${escapeHtml(item.city === "Remote" ? "Anywhere" : item.city)}</strong></td>
-      <td data-label="Supply"><span>${supply}</span></td>
+      <td data-label="Location"><strong>${escapeHtml(item.city === "Remote" ? "Anywhere" : item.city)}</strong></td>
+      <td data-label="Items or seats"><span>${supply}</span></td>
       <td data-label="Starting bid"><strong class="table-bid">₹${Number(item.startingBid || 500).toLocaleString("en-IN")}</strong></td>
       <td>
         <div class="table-row-actions">
@@ -733,10 +733,26 @@ function normaliseAlias(value) {
   return /^[a-z0-9._-]+$/.test(alias) ? alias : "";
 }
 
+// Studio+91 All Hands roster: [display name, alias]. Used for teammate suggestions.
+const STUDIO_ROSTER = [["Aadith V A","vaaadith"],["Aaron Lepcha","aaronlepcha"],["Aarya Ghodke","aaryaghodke"],["Aarya Kabara","kabaraaarya"],["Abhijeet Singh","abhijeet.singh"],["Abhinav Mishra","abhinamishra"],["Abhishek Dutta","abhidutta"],["Abhishek Kshirsagar","abkshirsagar"],["Abhishek Ranjan","abhisranjan"],["Aditi Bhatt","aditibhatt"],["Aditya Laad","adityalaad"],["Ajay Agarwal","agarwalajay"],["Akhil Prakash","akhilprakash"],["Akshit Verma","akshitverma"],["Alivia Chaudhuri","alchaudhuri"],["Amalkrishna P S","aps"],["Amya Rai","amyarai"],["Anant Tambade","ananttambade"],["Ananya .","ananya"],["Anchal Bathla","anchalbathla"],["Anish Abraham","anishabraham"],["Ankur Gupta","ankurgu"],["Ankur Parihar","ankurparihar"],["Anshika Khola","kholaanshika"],["Anudish Koshal","akoshal"],["Anuja Kulkarni","anukulkarni"],["Apeksha Gadwal","agadwal"],["Apoorva Agrawal","apooragrawal"],["Arjit Bhagat","arjitbhagat"],["Armeen Kapadia Basavaraju","arbasavaraju"],["Arushi Tandon","arushitandon"],["Aryan Karkera","karkeraaryan"],["Ashley Lobo","loboashley"],["Atharva Vankundre","avankundre"],["Ayushi Singh","singhayushi"],["Chirag Bansal","chiragbansal"],["Deepika Dhupar","ddhupar"],["Deepika Nanda","deepikananda"],["Dhanya Viswanath","dhanyav"],["Eemon Roy","eemonroy"],["Fayaz PK","fayazpk"],["Harinie Ananth","hananth"],["Isha Agrawal","ishaagrawal"],["Jayawant Tewari","jayawant.tewari"],["Jui Sonawane","juisonawane"],["June Sardar","junesardar"],["Juraij Kaja Moideen","jkajamoideen"],["Justin Varacheril George","jgeorge"],["Kashish Mehta","kashishmehta"],["Kiran Nadendla","knadendla"],["Komal Singh","komalsingh"],["Krushna Shitap","kshitap"],["Manas Karambelkar","mkarambelkar"],["Manjiri Durge","manjiridurge"],["Meher Jangra","meherjangra"],["Mohamed Siddique","mosiddique"],["Mohan Kumar","mgangappa"],["Monika Nagar","monikanagar"],["Mrigank Haleangadi","mhaleangadi"],["Narayan Menon","narayan.menon"],["Naved Khan","navedkhan"],["Nebin Biju","nebinbiju"],["Neha Motghare","nemot"],["Neha Singh","nesingh"],["Ninad Kale","ninadkale"],["Nithin Chandra S R","nisr"],["Nithin Ismail","nithin.ismail"],["Param Ranjan","paramranjan"],["Poonam Savale","poonamsavale"],["Pradnya Patil","pradnyapatil"],["Pragati Bansal","pragati.bansal"],["Prathima Sharma","prathsharma"],["Pratik Sangeetha","psangeetha"],["Preeti Sahasrabuddhe","preetis"],["Priya .","priy"],["Priyanka Saha","priyankasaha"],["Pulak Anand","pulakanand"],["Puneeth Hegde","puneethhegde"],["Rachit Jain","rachitjain"],["Rahul Goradia","rahulgoradia"],["Raj Rajpara","rajrajpara"],["Ramanuj Nanhoriya","rnanhoriya"],["Ranjana Sharma","ransharma"],["Ranjith Ravi","ranjithravi"],["Rhea Gupta","guptarhea"],["Rohan Baruah","rohanbaruah"],["Ruchi Batra","batraruchi"],["Sarah Zaki","sazaki"],["Sargam Prakash","prakash.sargam"],["Sasha Cherian","sashacherian"],["Satya Srivastava","satyasriv"],["Saugata Pramanik","sapramanik"],["Saurabh Singh","singhsaur"],["Saurav Harsh","sauravharsh"],["Shivani Mate","shivanimate"],["Shravani Gaikwad","shgaikwad"],["Shubham Nikhara","shubham.nikhara"],["Shweta Ratanpura","sratanpura"],["Siddharth S Kumar","siskumar"],["Simran Singh","simransingh"],["Snigdha Srivastava","srivastavasn"],["Sonsy Mishra","sonsymishra"],["Soumya Kasuganti","skasuganti"],["Srihari Hulikal Muralidhar","sriharih"],["Stuti Kamboj","stutikamboj"],["Sunair D","sunairrajd"],["Tania Jain","jaintania"],["Tejus Nagdev","tejusnagdev"],["Thuli Chishi","thulichishi"],["Timothy Jayaraj","tjayaraj"],["Udayan Vidyanta","uvidyanta"],["Vartika Agarwal","varagarwal"],["Venkat Gopal","vevenka"],["Vidhi Bhati","vidhibhati"],["Vijayta Sharma","vijsharma"],["Vinod Mulky","vinodmulky"],["Vishwam Rajagopal","vrajagopal"],["Vivek Menon","vmuralidhar"],["Yamini Gupta","yaminigupta"]];
+
+function rosterMatches(query, exclude = []) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const taken = new Set(exclude.map((m) => m.toLowerCase()));
+  return STUDIO_ROSTER
+    .filter(([name, alias]) => !taken.has(alias) && (alias.startsWith(q) || name.toLowerCase().split(/\s+/).some((part) => part.startsWith(q)) || name.toLowerCase().startsWith(q)))
+    .slice(0, 6);
+}
+
+function rosterName(alias) {
+  return STUDIO_ROSTER.find(([, a]) => a === String(alias).toLowerCase())?.[0] || alias;
+}
+
 function teamMembersMarkup(value) {
   return parseTeamMembers(value).map((member, index) => {
     const email = memberEmail(member);
-    return `<span class="entry-member"><span class="entry-member__avatar">${escapeHtml(initials(member))}${email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" onerror="this.remove()">` : ""}</span>${escapeHtml(member)}<button type="button" data-remove-team-member="${index}" aria-label="Remove ${escapeHtml(member)}">×</button></span>`;
+    return `<span class="entry-member" title="${escapeHtml(member)}"><span class="entry-member__avatar">${escapeHtml(initials(rosterName(member)))}${email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" onerror="this.remove()">` : ""}</span>${escapeHtml(rosterName(member))}<button type="button" data-remove-team-member="${index}" aria-label="Remove ${escapeHtml(member)}">×</button></span>`;
   }).join("");
 }
 
@@ -744,7 +760,7 @@ function readInlineContributor(row) {
   const value = (name) => row.querySelector(`[data-inline-field="${name}"]`)?.value.trim() || "";
   if (value("contributorMode") !== "team") return { contributor: viewerName || "", team: "" };
   const members = parseTeamMembers(value("teamMembers"));
-  return { contributor: members.join(", "), team: members.join(", ") };
+  return { contributor: members.map(rosterName).join(", "), team: members.join(", ") };
 }
 
 const LOT_CITIES = ["Hyderabad", "Bengaluru", "Noida"];
@@ -806,7 +822,7 @@ function createInlineEntryMarkup() {
           <input type="hidden" data-inline-field="teamMembers" value="${escapeHtml(draft.teamMembers || "")}">
           <div class="entry-chips" role="radiogroup" aria-label="Contributed by">
             <button type="button" role="radio" class="entry-chip" data-contributor-mode="you" aria-checked="${mode === "you"}">You</button>
-            <button type="button" role="radio" class="entry-chip" data-contributor-mode="team" aria-checked="${mode === "team"}">A team</button>
+            <button type="button" role="radio" class="entry-chip" data-contributor-mode="team" aria-checked="${mode === "team"}">Group</button>
           </div>
           ${mode === "you" ? `
           <div class="entry-contributor entry-contributor--you">
@@ -814,7 +830,8 @@ function createInlineEntryMarkup() {
             <strong>${escapeHtml(viewerName || "You")}</strong>
           </div>` : `
           <div class="entry-team">
-            <input data-team-member-input aria-label="Add teammate by Microsoft alias" placeholder="Type a Microsoft alias and press Enter, e.g. mgangappa" autocapitalize="off" spellcheck="false">
+            <input data-team-member-input aria-label="Add teammate by name or Microsoft alias" placeholder="Type a name or alias, e.g. Abhishek" autocapitalize="off" spellcheck="false" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="teamSuggest">
+            <div class="entry-suggest" id="teamSuggest" role="listbox" data-team-suggest hidden></div>
             <div class="entry-members" data-team-members>${teamMembersMarkup(draft.teamMembers || "")}</div>
           </div>`}
         </div>
@@ -1471,9 +1488,64 @@ function addTeamMemberFromInput(input) {
   updateTeamMembers(form, members.slice(0, 12));
 }
 
+function renderTeamSuggestions(input) {
+  const form = input.closest(".table-entry-row");
+  const box = form.querySelector("[data-team-suggest]");
+  if (!box) return;
+  const members = parseTeamMembers(form.querySelector('[data-inline-field="teamMembers"]').value);
+  const matches = rosterMatches(input.value, members);
+  box.innerHTML = matches.map(([name, alias], index) => `
+    <button type="button" role="option" class="entry-suggest__item${index === 0 ? " is-active" : ""}" data-suggest-alias="${escapeHtml(alias)}">
+      <span class="entry-member__avatar">${escapeHtml(initials(name))}<img src="/api/avatar/${encodeURIComponent(`${alias}@microsoft.com`)}" alt="" onerror="this.remove()"></span>
+      <span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(alias)}</small></span>
+    </button>`).join("");
+  box.hidden = !matches.length;
+  input.setAttribute("aria-expanded", String(matches.length > 0));
+}
+
+function pickTeamSuggestion(input, alias) {
+  const form = input.closest(".table-entry-row");
+  const members = parseTeamMembers(form.querySelector('[data-inline-field="teamMembers"]').value);
+  if (!members.some((m) => m.toLowerCase() === alias)) members.push(alias);
+  input.value = "";
+  updateTeamMembers(form, members.slice(0, 12));
+  renderTeamSuggestions(input);
+  input.focus();
+}
+
+elements.entryHolder.addEventListener("input", (event) => {
+  const input = event.target.closest("[data-team-member-input]");
+  if (input) renderTeamSuggestions(input);
+});
+elements.entryHolder.addEventListener("mousedown", (event) => {
+  const option = event.target.closest("[data-suggest-alias]");
+  if (!option) return;
+  event.preventDefault();
+  const input = option.closest(".table-entry-row").querySelector("[data-team-member-input]");
+  pickTeamSuggestion(input, option.dataset.suggestAlias);
+});
+
 elements.entryHolder.addEventListener("keydown", (event) => {
   const input = event.target.closest("[data-team-member-input]");
   if (!input) return;
+  const box = input.closest(".table-entry-row").querySelector("[data-team-suggest]");
+  const options = box && !box.hidden ? [...box.querySelectorAll("[data-suggest-alias]")] : [];
+  if ((event.key === "ArrowDown" || event.key === "ArrowUp") && options.length) {
+    event.preventDefault();
+    const current = options.findIndex((o) => o.classList.contains("is-active"));
+    const next = (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length;
+    options.forEach((o, i) => o.classList.toggle("is-active", i === next));
+    return;
+  }
+  if (event.key === "Escape" && options.length) {
+    box.hidden = true;
+    return;
+  }
+  if ((event.key === "Enter" || event.key === "Tab") && options.length && input.value.trim()) {
+    event.preventDefault();
+    pickTeamSuggestion(input, (options.find((o) => o.classList.contains("is-active")) || options[0]).dataset.suggestAlias);
+    return;
+  }
   if (event.key === "Enter" || event.key === ",") {
     event.preventDefault();
     addTeamMemberFromInput(input);
@@ -1486,7 +1558,12 @@ elements.entryHolder.addEventListener("keydown", (event) => {
 });
 elements.entryHolder.addEventListener("focusout", (event) => {
   const input = event.target.closest("[data-team-member-input]");
-  if (input) addTeamMemberFromInput(input);
+  if (!input) return;
+  const box = input.closest(".table-entry-row")?.querySelector("[data-team-suggest]");
+  if (box) box.hidden = true;
+  const typed = normaliseAlias(input.value);
+  if (typed && STUDIO_ROSTER.some(([, alias]) => alias === typed)) addTeamMemberFromInput(input);
+  else if (typed && !/\s/.test(input.value.trim())) addTeamMemberFromInput(input);
 });
 
 const handleBoardClick = async (event) => {

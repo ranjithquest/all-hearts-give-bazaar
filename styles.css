@@ -3235,3 +3235,16 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 .brand__wordmark { font-family: "Archivo Black", "Arial Black", var(--font-body); font-weight: 400; letter-spacing: -.03em; }
 
 .entry-card__actions button.entry-delete:not(.table-entry-ideas) { color: #cf043b; background: transparent; border-color: #cf043b; }
+
+.entry-team { position: relative; }
+.entry-suggest { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20; display: grid; padding: 6px; background: #fffaf0; border: 1.5px solid #3d3d3d; border-radius: 12px; box-shadow: 4px 4px 0 #3d3d3d; max-height: 280px; overflow-y: auto; }
+.entry-suggest[hidden] { display: none; }
+.entry-suggest__item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; text-align: left; cursor: pointer; font: inherit; color: #3d3d3d; }
+.entry-suggest__item.is-active, .entry-suggest__item:hover { background: #fbe6b0; }
+.entry-suggest__item > span:last-child { display: grid; line-height: 1.2; }
+.entry-suggest__item strong { font-size: 14px; }
+.entry-suggest__item small { font-size: 12px; opacity: .65; }
+.board-bidding { display: flex; width: max-content; max-width: 100%; margin: 28px auto 0; }
+
+.hero__memories { margin-top: 56px; }
+@media (max-width: 760px) { .hero__memories { margin-top: 44px; } }
