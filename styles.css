@@ -3292,3 +3292,66 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 @media (max-width: 520px) {
   .entry-card__actions button[data-inline-action="cancel"] { order: 1; min-height: 32px; }
 }
+
+/* Mobile: lots as cards */
+@media (max-width: 760px) {
+  .city-filter-chips { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; margin-left: -20px; margin-right: -20px; padding: 2px 20px 4px; scrollbar-width: none; }
+  .city-filter-chips::-webkit-scrollbar { display: none; }
+  .city-filter-chips button { flex: 0 0 auto; }
+  .auction-table-wrap { overflow: visible; margin-right: 0; padding: 0 4px 0 0; }
+  .auction-table, .auction-table tbody { display: block; min-width: 0; width: 100%; }
+  .auction-table thead { display: none; }
+  .auction-table tbody tr:not(.table-entry-row):not(.table-full-row) {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px 12px;
+    margin-bottom: 22px;
+    padding: 14px;
+    border: 2px solid #3d3d3d;
+    border-radius: 14px;
+    background: var(--paper);
+  }
+  .auction-table tbody tr.is-draft:not(.table-entry-row) { background: #f6e5bd; }
+  .auction-table tbody tr:not(.table-entry-row):not(.table-full-row) td,
+  .auction-table tbody tr:not(.table-entry-row):not(.table-full-row) td:first-child,
+  .auction-table tbody tr:not(.table-entry-row):not(.table-full-row) td:last-child {
+    display: block;
+    width: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    text-align: left;
+  }
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Lot"] { position: absolute; z-index: 2; top: 24px; left: 24px; }
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Contribution"] { grid-column: 1 / -1; }
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Contributed by"] { grid-column: 1 / -1; padding-top: 12px; border-top: 1px dashed rgba(61, 61, 61, .3); }
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Location"],
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Starting bid"] { grid-column: 1; }
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Items or seats"] { grid-column: 2; text-align: right; }
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Location"]::before,
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Items or seats"]::before,
+  .auction-table tbody tr:not(.table-entry-row) td[data-label="Starting bid"]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: rgba(61, 61, 61, .65);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .auction-table tbody tr:not(.table-entry-row) td:last-child:not([data-label]) { grid-column: 2; align-self: end; }
+  .table-contribution { display: block; }
+  .table-contribution__visual { width: 100%; height: auto; aspect-ratio: 16 / 9; margin: 0 0 14px; border-radius: 10px; overflow: hidden; }
+  .table-contribution__visual img { width: 100%; height: 100%; object-fit: cover; }
+  .table-contribution__visual > span { display: grid; place-items: center; height: 100%; font-size: 48px; }
+  .table-contribution strong { font-size: 22px; }
+  .table-contribution small { font-size: 14px; }
+  .table-contributor { min-width: 0; }
+  .table-bid { font-size: 20px; }
+  .table-photo-count { right: 8px; bottom: 8px; padding: 3px 9px; font-size: 12px; }
+  .table-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 14px; }
+  .table-row-actions button { min-height: 36px; padding: 6px 2px; font-size: 14px; }
+}
