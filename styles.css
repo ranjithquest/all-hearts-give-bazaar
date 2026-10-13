@@ -3244,7 +3244,15 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 .entry-suggest__item > span:last-child { display: grid; line-height: 1.2; }
 .entry-suggest__item strong { font-size: 14px; }
 .entry-suggest__item small { font-size: 12px; opacity: .65; }
-.board-bidding { display: flex; width: max-content; max-width: 100%; margin: 28px auto 0; }
 
 .hero__memories { margin-top: 56px; }
 @media (max-width: 760px) { .hero__memories { margin-top: 44px; } }
+
+.offer-ideas h4.offer-ideas__title { margin: 0 0 18px; text-align: center; color: #3d3d3d; font-family: var(--font-display, "Fraunces", serif); font-size: clamp(26px, 3vw, 38px); font-weight: 700; letter-spacing: normal; text-transform: none; line-height: 1.15; }
+
+.hero__terrain { background: none !important; }
+.board-section { background: #f5debc !important; }
+
+.board-bidding { display: grid; justify-items: center; gap: 4px; margin: 56px auto 8px; text-align: center; color: #3d3d3d; }
+.board-bidding__lead, .board-bidding__event { font-size: 13px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: rgba(61, 61, 61, .7); }
+.board-bidding strong { font-family: var(--font-display, "Fraunces", serif); font-size: clamp(40px, 6vw, 72px); line-height: 1; color: #cf043b; }

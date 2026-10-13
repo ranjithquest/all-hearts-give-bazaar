@@ -440,6 +440,14 @@ async function initializeStorage() {
 
   viewerEmail = vibeStorage.viewerEmail || "";
   viewerName = formatViewerName(viewerEmail);
+  const rosterMatch = STUDIO_ROSTER.find(([, alias]) => alias === viewerEmail.split("@")[0].toLowerCase());
+  if (rosterMatch) viewerName = rosterMatch[0];
+  fetch("/api/me").then((r) => (r.ok ? r.json() : null)).then((me) => {
+    if (me?.name && me.email?.toLowerCase() === viewerEmail.toLowerCase() && me.name !== viewerName) {
+      viewerName = me.name;
+      renderBoard();
+    }
+  }).catch(() => {});
   if (vibeStorage.isPublicShare || !viewerEmail) {
     storageReadOnly = true;
     inlineEntryOpen = false;
@@ -810,13 +818,6 @@ function createInlineEntryMarkup() {
   return `
     <form class="entry-form table-entry-row" onsubmit="return false" aria-labelledby="entryCardTitle">
       <div class="entry-card__grid">
-        <div class="entry-field entry-field--full"><span>Location</span>
-          <input type="hidden" data-inline-field="city" value="${escapeHtml(city)}">
-          <div class="entry-chips" role="radiogroup" aria-label="Location">
-            ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"]].map(([value, label]) => `
-              <button type="button" role="radio" class="entry-chip" data-entry-city="${value}" aria-checked="${city === value}">${label}</button>`).join("")}
-          </div>
-        </div>
         <div class="entry-field entry-field--full"><span>Contributed by</span>
           <input type="hidden" data-inline-field="contributorMode" value="${mode}">
           <input type="hidden" data-inline-field="teamMembers" value="${escapeHtml(draft.teamMembers || "")}">
@@ -834,6 +835,13 @@ function createInlineEntryMarkup() {
             <div class="entry-suggest" id="teamSuggest" role="listbox" data-team-suggest hidden></div>
             <div class="entry-members" data-team-members>${teamMembersMarkup(draft.teamMembers || "")}</div>
           </div>`}
+        </div>
+        <div class="entry-field entry-field--full"><span>Location</span>
+          <input type="hidden" data-inline-field="city" value="${escapeHtml(city)}">
+          <div class="entry-chips" role="radiogroup" aria-label="Location">
+            ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"]].map(([value, label]) => `
+              <button type="button" role="radio" class="entry-chip" data-entry-city="${value}" aria-checked="${city === value}">${label}</button>`).join("")}
+          </div>
         </div>
         <label class="entry-field entry-field--full"><span>What are you auctioning?</span>
           <input data-inline-field="title" maxlength="70" placeholder="e.g. A Sunday pottery session for two" value="${escapeHtml(draft.title || "")}">
