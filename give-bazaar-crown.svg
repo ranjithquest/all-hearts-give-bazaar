@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" role="img" aria-labelledby="title desc">
+  <title id="title">GIVE Bazaar crown</title>
+  <desc id="desc">A playful hand-drawn golden crown with brick-red and powder-blue details.</desc>
+  <defs>
+    <filter id="rough" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency=".015" numOctaves="2" seed="9" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3"/>
+    </filter>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4cc68"/>
+      <stop offset=".55" stop-color="#e6b64c"/>
+      <stop offset="1" stop-color="#cc8e35"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#rough)" stroke="#382f2a" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M124 394 82 153l143 92L374 71l143 176 154-96-46 243Z" fill="url(#gold)" stroke-width="13"/>
+    <path d="M124 394c132-30 366-30 501 0l-21 70c-145-25-312-25-459 0Z" fill="#eed6a6" stroke-width="13"/>
+    <path d="m82 153 143 92 149-174 143 176 154-96" fill="none" stroke="#fff4cf" stroke-width="18" opacity=".7"/>
+    <circle cx="82" cy="153" r="27" fill="#a53f3a" stroke-width="10"/>
+    <circle cx="374" cy="71" r="31" fill="#a53f3a" stroke-width="10"/>
+    <circle cx="671" cy="151" r="27" fill="#a53f3a" stroke-width="10"/>
+    <circle cx="225" cy="245" r="22" fill="#98cfda" stroke-width="9"/>
+    <circle cx="517" cy="247" r="22" fill="#98cfda" stroke-width="9"/>
+    <path d="M184 367c102-32 281-34 382-1" fill="none" stroke="#a53f3a" stroke-width="14"/>
+    <path d="M176 424c110-20 287-20 397 0" fill="none" stroke="#a53f3a" stroke-width="10" stroke-dasharray="3 25"/>
+  </g>
+  <g fill="#fff4cf">
+    <path d="m44 303 9 20 21 8-21 9-9 20-9-20-21-9 21-8Z"/>
+    <path d="m705 293 8 17 18 7-18 8-8 17-8-17-18-8 18-7Z"/>
+    <circle cx="675" cy="424" r="8"/>
+    <circle cx="93" cy="430" r="7"/>
+  </g>
+</svg>

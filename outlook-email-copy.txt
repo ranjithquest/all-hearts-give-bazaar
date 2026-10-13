@@ -1,0 +1,47 @@
+SUBJECT
+What will you bring to the All Hearts GIVE Bazaar?
+
+PREHEADER
+Offer an item, a skill or an unforgettable hour for the live GIVE Bazaar auction on 23 October.
+
+BODY
+
+Hi everyone,
+
+The Studio+91 GIVE Bazaar is returning on 23 October 2026: a fast, lively auction where objects, skills and unforgettable experiences from our community will raise funds for a cause.
+
+We now have one simple sign-up board. Add your contribution before the event, and during All Hearts the same board becomes the live auction screen.
+
+What could you contribute?
+
+• An experience — a studio tour, workshop, mentoring session or memorable outing
+• A skill — portfolio coaching, photography, consulting or practical help
+• An object — art, books, stationery, food or something handmade
+• Your time — a leadership conversation, local walk or shared meal
+
+You add the lot. The GIVE team reviews and numbers it. Studio+91 bids live during All Hearts.
+
+[ADD YOUR IDEA]
+Replace with the website link before sending.
+
+Submissions close: 19 October 2026
+Live auction: 23 October 2026 during All Hearts
+
+The contribution form takes about three minutes. If your idea is selected for the live lineup, the GIVE team will contact you to confirm the auction and fulfilment details.
+
+One generous idea can travel a surprisingly long way. What will you bring to the Bazaar?
+
+Questions? Please contact Ranjith or anyone in the GIVE Champs team.
+
+Warmly,
+Studio+91 GIVE v-Team
+
+#Give2026 | #Studio91Gives | #WhyIGive
+
+OUTLOOK SETUP NOTES
+
+1. Open outlook-email-draft.html in a browser.
+2. Replace both instances of https://YOUR-SITE-LINK with the final hosted website address.
+3. Select the rendered email content, copy it, and paste it into a new Outlook message.
+4. Confirm the button links after pasting.
+5. Send a test to yourself before the studio-wide send.
