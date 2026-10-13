@@ -458,6 +458,18 @@ async function initializeStorage() {
       return;
     }
     scheduleStorageRefresh();
+    try {
+      const home = await vibeStorage.data.get(HOME_CITY_KEY);
+      if (LOT_CITIES.includes(home) && !savedHomeCity) {
+        savedHomeCity = home;
+        const cityField = elements.entryHolder.querySelector('[data-inline-field="city"]');
+        if (cityField && !editingLiveLot && cityField.form?.querySelector('[data-inline-field="contributorMode"]')?.value !== "team") {
+          if (inlineDraftValues) inlineDraftValues.city = home;
+          cityField.value = home;
+          renderBoard();
+        }
+      }
+    } catch {}
   } catch (error) {
     console.error("Could not initialize VibeHub storage.", error);
     storageReadOnly = true;
@@ -735,15 +747,38 @@ function readInlineContributor(row) {
   return { contributor: members.join(", "), team: members.join(", ") };
 }
 
+const LOT_CITIES = ["Hyderabad", "Bengaluru", "Noida"];
+const HOME_CITY_KEY = "give-bazaar-home-city";
+// Office locations from the work directory; people not listed get theirs remembered once they pick.
+const KNOWN_HOME_CITIES = {
+  ranjithravi: "Bengaluru",
+  abhisranjan: "Bengaluru",
+  asmitakumar: "Hyderabad",
+  bmutum: "Bengaluru",
+  mohakgulati: "Bengaluru",
+  sratanpura: "Bengaluru",
+  stutikamboj: "Noida"
+};
+let savedHomeCity = "";
+
 function defaultCity() {
-  const cities = ["Hyderabad", "Bengaluru", "Noida"];
+  if (LOT_CITIES.includes(savedHomeCity)) return savedHomeCity;
+  let local = "";
+  try { local = localStorage.getItem("giveBazaarCity") || ""; } catch {}
+  if (LOT_CITIES.includes(local)) return local;
+  const known = KNOWN_HOME_CITIES[(viewerEmail || "").split("@")[0].toLowerCase()];
+  if (known) return known;
   const ownLot = contributions
-    .filter((item) => isContributionOwner(item) && cities.includes(item.city))
+    .filter((item) => isContributionOwner(item) && !item.team && LOT_CITIES.includes(item.city))
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
-  if (ownLot) return ownLot.city;
-  let saved = "";
-  try { saved = localStorage.getItem("giveBazaarCity") || ""; } catch {}
-  return cities.includes(saved) ? saved : "Hyderabad";
+  return ownLot ? ownLot.city : "";
+}
+
+function rememberHomeCity(city) {
+  if (!LOT_CITIES.includes(city) || city === savedHomeCity) return;
+  savedHomeCity = city;
+  try { localStorage.setItem("giveBazaarCity", city); } catch {}
+  if (vibeStorage && !storageReadOnly) vibeStorage.data.set(HOME_CITY_KEY, city).catch(() => {});
 }
 
 function createInlineEntryMarkup() {
@@ -751,6 +786,7 @@ function createInlineEntryMarkup() {
   const entryTitle = document.getElementById("entryCardTitle");
   if (entryTitle) entryTitle.textContent = editingLiveLot ? "Edit your lot" : "Add your lot";
   const mode = draft.contributorMode === "team" ? "team" : "you";
+  const city = draft.city || (mode === "you" ? defaultCity() : "");
   const selected = (name, value, fallback) => {
     const current = draft[name] || fallback;
     return current === value ? " selected" : "";
@@ -759,10 +795,10 @@ function createInlineEntryMarkup() {
     <form class="entry-form table-entry-row" onsubmit="return false" aria-labelledby="entryCardTitle">
       <div class="entry-card__grid">
         <div class="entry-field entry-field--full"><span>Location</span>
-          <input type="hidden" data-inline-field="city" value="${escapeHtml(draft.city || defaultCity())}">
+          <input type="hidden" data-inline-field="city" value="${escapeHtml(city)}">
           <div class="entry-chips" role="radiogroup" aria-label="Location">
             ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"]].map(([value, label]) => `
-              <button type="button" role="radio" class="entry-chip" data-entry-city="${value}" aria-checked="${(draft.city || defaultCity()) === value}">${label}</button>`).join("")}
+              <button type="button" role="radio" class="entry-chip" data-entry-city="${value}" aria-checked="${city === value}">${label}</button>`).join("")}
           </div>
         </div>
         <div class="entry-field entry-field--full"><span>Contributed by</span>
@@ -891,6 +927,10 @@ async function saveInlineEntry(targetStatus) {
     showToast("Hang on, your photos are still uploading.");
     return null;
   }
+  if (targetStatus === "pending" && !LOT_CITIES.includes(value("city"))) {
+    showToast("Choose the location for this lot.");
+    return;
+  }
   if (targetStatus === "pending" && title && description && contributor && startingBid && quantity && !inlineImages.length) {
     showToast("Add at least one photo of your lot.");
     return;
@@ -907,7 +947,7 @@ async function saveInlineEntry(targetStatus) {
     contributor: contributor || "Not added",
     category: "",
     type: "",
-    city: value("city") || "Hyderabad",
+    city: value("city") || "",
     quantity: quantity || 1,
     startingBid: startingBid || 500,
     duration: "",
@@ -926,7 +966,7 @@ async function saveInlineEntry(targetStatus) {
       : new Date().toISOString()
   };
 
-  try { localStorage.setItem("giveBazaarCity", contribution.city); } catch {}
+  if (!team) rememberHomeCity(contribution.city);
   const previousVersion = editingDraftId ? contributions.find((item) => item.id === editingDraftId) : null;
   const wasLiveEdit = editingLiveLot;
   row.querySelectorAll("button").forEach((button) => { button.disabled = true; });
@@ -1457,6 +1497,9 @@ const handleBoardClick = async (event) => {
     const membersField = form.querySelector('[data-inline-field="teamMembers"]');
     const myAlias = normaliseAlias((viewerEmail || "").split("@")[0]);
     if (modeChip.dataset.contributorMode === "team" && !membersField.value && myAlias) membersField.value = myAlias;
+    if (!editingLiveLot) {
+      form.querySelector('[data-inline-field="city"]').value = modeChip.dataset.contributorMode === "team" ? "" : defaultCity();
+    }
     renderBoard();
     if (modeChip.dataset.contributorMode === "team") {
       requestAnimationFrame(() => elements.entryHolder.querySelector("[data-team-member-input]")?.focus());
@@ -1476,7 +1519,7 @@ const handleBoardClick = async (event) => {
     const form = cityChip.closest(".table-entry-row");
     form.querySelector('[data-inline-field="city"]').value = cityChip.dataset.entryCity;
     form.querySelectorAll("[data-entry-city]").forEach((chip) => chip.setAttribute("aria-checked", String(chip === cityChip)));
-    try { localStorage.setItem("giveBazaarCity", cityChip.dataset.entryCity); } catch {}
+    if (form.querySelector('[data-inline-field="contributorMode"]').value !== "team") rememberHomeCity(cityChip.dataset.entryCity);
     return;
   }
   const removeImage = event.target.closest("[data-remove-inline-image]");
