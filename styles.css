@@ -3262,3 +3262,4 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 @media (max-width: 760px) { .hero__content .hero__magic { margin-top: 28px; } }
 .board-bidding strong { font-family: "Honk", Impact, sans-serif; font-palette: --signup-bazaar; font-variation-settings: "MORF" 15, "SHLN" 65; font-weight: 400; letter-spacing: -.02em; line-height: .9; font-size: clamp(48px, 8vw, 104px); color: inherit; }
 .board-bidding strong { margin: 6px 0 10px; }
+.support-section__cta { border-radius: 12px; }
