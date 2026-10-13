@@ -822,7 +822,8 @@ function createInlineEntryMarkup() {
   const entryTitle = document.getElementById("entryCardTitle");
   if (entryTitle) entryTitle.textContent = editingLiveLot ? "Edit your lot" : "Add your lot";
   const mode = draft.contributorMode === "team" ? "team" : "you";
-  const city = draft.city || (mode === "you" ? defaultCity() : "");
+  const homeCity = defaultCity();
+  const city = draft.city || (mode === "you" ? homeCity : "");
   const selected = (name, value, fallback) => {
     const current = draft[name] || fallback;
     return current === value ? " selected" : "";
@@ -849,7 +850,7 @@ function createInlineEntryMarkup() {
         <div class="entry-field entry-field--full"><span>Location</span>
           <input type="hidden" data-inline-field="city" value="${escapeHtml(city)}">
           <div class="entry-chips" role="radiogroup" aria-label="Location">
-            ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"]].map(([value, label]) => `
+            ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"]].sort(([a], [b]) => (b === homeCity) - (a === homeCity)).map(([value, label]) => `
               <button type="button" role="radio" class="entry-chip" data-entry-city="${value}" aria-checked="${city === value}">${label}</button>`).join("")}
           </div>
         </div>
