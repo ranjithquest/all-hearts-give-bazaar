@@ -40,9 +40,9 @@
           <div><strong id="countdownDays">10</strong><span>days to go</span></div>
           <div><strong>3</strong><span>locations</span></div>
         </div>
-        <div class="hero__magic"><button class="button button--primary hero__cta" type="button" data-hero-add-lot>Add your lot</button></div>
+        <div class="hero__magic"><button class="button button--primary hero__cta" type="button" data-hero-add-lot>Add your item</button></div>
       </div>
-      <section class="hero__memories" aria-label="Lots from last year’s Studio+91 GIVE Bazaar">
+      <section class="hero__memories" aria-label="Items from last year’s Studio+91 GIVE Bazaar">
         <p class="hero__memories-title" id="memoriesTitle">Last year’s Studio+91 GIVE Bazaar raised <strong>₹1,79,112</strong> with Microsoft match</p>
         <div class="memory-marquee">
           <div class="memory-marquee__track" id="memoryTrack"></div>
@@ -70,12 +70,12 @@
       <section class="entry-card entry-shell" id="addLot" aria-labelledby="entryCardTitle">
         <div class="entry-card__head">
           <div>
-            <h3 id="entryCardTitle">Add your lot</h3>
+            <h3 id="entryCardTitle">Add your item</h3>
           </div>
-          <div class="lot-capacity" id="lotCapacity" role="progressbar" aria-label="Auction lots filled" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0">
+          <div class="lot-capacity" id="lotCapacity" role="progressbar" aria-label="Auction items filled" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0">
             <div class="lot-capacity__text">
-              <strong id="lotCapacityText">0 of 15 lots filled</strong>
-              <span id="lotCapacityNote">15 slots left. Secure your lot first and raise funds.</span>
+              <strong id="lotCapacityText">0 of 15 items filled</strong>
+              <span id="lotCapacityNote">15 slots left. Secure your item first and raise funds.</span>
             </div>
             <div class="lot-capacity__track"><i id="lotCapacityBar"></i></div>
           </div>
@@ -84,10 +84,10 @@
       </section>
 
       <div class="board-list-heading">
-        <h2>Lots on the board</h2>
+        <h2>Items on the board</h2>
       </div>
 
-      <div class="city-filter-chips" aria-label="Filter lots by location">
+      <div class="city-filter-chips" aria-label="Filter items by location">
         <button type="button" data-city-filter="all" aria-pressed="true">All locations</button>
         <button type="button" data-city-filter="Hyderabad" aria-pressed="false">Hyderabad</button>
         <button type="button" data-city-filter="Bengaluru" aria-pressed="false">Bangalore</button>
@@ -96,10 +96,10 @@
 
       <div class="auction-table-wrap" id="contributionTableWrap">
         <table class="auction-table">
-          <caption class="sr-only">GIVE Bazaar lots</caption>
+          <caption class="sr-only">GIVE Bazaar items</caption>
           <thead>
             <tr>
-              <th scope="col">Lot</th>
+              <th scope="col">Item</th>
               <th scope="col">Contribution</th>
               <th scope="col">Contributed by</th>
               <th scope="col">Location</th>
@@ -114,9 +114,9 @@
 
       <div class="empty-state" id="emptyState" hidden>
         <span aria-hidden="true">⌁</span>
-        <h3>No lots yet</h3>
-        <p>Be the first to add a lot using the form above.</p>
-        <button class="button button--ghost empty-state__cta" type="button" data-hero-add-lot>Add your lot</button>
+        <h3>No items yet</h3>
+        <p>Be the first to add an item using the form above.</p>
+        <button class="button button--ghost empty-state__cta" type="button" data-hero-add-lot>Add your item</button>
       </div>
 
       <p class="board-bidding"><span class="board-bidding__lead">Bidding starts during All Hearts</span><strong class="board-bidding__date"><img class="type-art type-art--date" src="type/bidding-date.png" alt="23rd October"></strong></p>
@@ -148,7 +148,7 @@
       <div class="form-aside">
         <p class="eyebrow">Add to the trail</p>
         <h2>Your idea can become someone’s favourite bid.</h2>
-        <p>Share enough detail for the GIVE team to turn your contribution into a compelling live auction lot.</p>
+        <p>Share enough detail for the GIVE team to turn your contribution into a compelling live auction item.</p>
         <ol class="form-progress" aria-label="Form progress">
           <li class="is-active" data-progress-step="1"><span>1</span><div><strong>The idea</strong><small>What are you offering?</small></div></li>
           <li data-progress-step="2"><span>2</span><div><strong>The details</strong><small>How will it work?</small></div></li>
@@ -232,7 +232,7 @@
         </div>
 
         <div class="form-step" data-form-step="2">
-          <div class="form-step__heading"><span>Step 2 of 3</span><h3>Help us plan the auction lot</h3></div>
+          <div class="form-step__heading"><span>Step 2 of 3</span><h3>Help us plan the auction item</h3></div>
           <div class="field-row">
             <div class="field">
               <label for="city">Availability / location</label>
@@ -307,9 +307,9 @@
     </div>
   </dialog>
 
-  <dialog class="memory-lightbox" id="memoryLightbox" aria-label="Last year’s lot">
+  <dialog class="memory-lightbox" id="memoryLightbox" aria-label="Last year’s item">
     <button class="memory-lightbox__close" type="button" data-close-memory aria-label="Close">×</button>
-    <button class="memory-lightbox__nav memory-lightbox__nav--prev" type="button" data-memory-step="-1" aria-label="Previous lot">‹</button>
+    <button class="memory-lightbox__nav memory-lightbox__nav--prev" type="button" data-memory-step="-1" aria-label="Previous item">‹</button>
     <figure>
       <div class="memory-lightbox__frame">
         <img id="memoryLightboxImage" alt="">
@@ -317,14 +317,14 @@
       </div>
       <figcaption id="memoryLightboxCaption"></figcaption>
     </figure>
-    <button class="memory-lightbox__nav memory-lightbox__nav--next" type="button" data-memory-step="1" aria-label="Next lot">›</button>
+    <button class="memory-lightbox__nav memory-lightbox__nav--next" type="button" data-memory-step="1" aria-label="Next item">›</button>
   </dialog>
 
   <dialog class="success-dialog" id="successDialog">
     <div class="success-dialog__art" aria-hidden="true"><img src="heart.png" alt=""><i></i><i></i><i></i></div>
     <p class="eyebrow">Contribution received</p>
     <h2>Your idea has joined the trail.</h2>
-    <p>Your lot is now on the board with its lot number. You can delete it from the board if your plans change.</p>
+    <p>Your item is now on the board with its item number. You can delete it from the board if your plans change.</p>
     <div class="success-dialog__actions">
       <button class="button button--primary" type="button" data-close-success>Explore the Bazaar</button>
       <button class="button button--ghost" type="button" data-add-another>Add another idea</button>
@@ -358,7 +358,7 @@
       <header class="auction-header">
         <div class="auction-brand"><img src="heart.png" alt=""><strong>STUDIO+91 GIVE BAZAAR</strong><small>LIVE AUCTION</small></div>
         <div class="auction-preview-brand brand"><span class="brand__wordmark">STUDIO+91 GIVE</span></div>
-        <div class="auction-progress"><span id="auctionProgress">LOT 1 OF 12</span></div>
+        <div class="auction-progress"><span id="auctionProgress">ITEM 1 OF 12</span></div>
         <button class="auction-close" type="button" data-close-auction aria-label="Close auction mode">×</button>
       </header>
 
@@ -389,13 +389,13 @@
       </div>
 
       <div class="auction-controls">
-        <button type="button" id="auctionPrevious">← Previous lot</button>
+        <button type="button" id="auctionPrevious">← Previous item</button>
         <div class="auction-timer" id="auctionTimer">
           <span id="auctionSeconds">40</span>
           <small>SECONDS</small>
         </div>
         <button class="auction-start" type="button" id="auctionStartTimer">Start 40-second bidding</button>
-        <button type="button" id="auctionNext">Next lot →</button>
+        <button type="button" id="auctionNext">Next item →</button>
       </div>
     </div>
   </dialog>

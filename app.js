@@ -347,10 +347,10 @@ function setStorageBanner(message = "") {
 
 function storageErrorMessage(error, action) {
   if (error?.code === "LOTS_FULL") {
-    return `All ${LOT_LIMIT} lots are filled. Thank you for wanting to give!`;
+    return `All ${LOT_LIMIT} items are filled. Thank you for wanting to give!`;
   }
   if (error?.code === "PUBLIC_SHARE_BLOCKED") {
-    return "Sign in with your Microsoft account to add or update a lot.";
+    return "Sign in with your Microsoft account to add or update an item.";
   }
   if (error?.code === "STORAGE_NOT_ENABLED") {
     return "Project Storage is not enabled yet. Turn it on in VibeHub Edit Project → Storage.";
@@ -526,7 +526,7 @@ function rankFilledLots(list) {
 }
 
 function lotsFullError() {
-  return Object.assign(new Error("All lots are filled."), { code: "LOTS_FULL" });
+  return Object.assign(new Error("All items are filled."), { code: "LOTS_FULL" });
 }
 
 function renderLotCapacity(filledCount) {
@@ -536,13 +536,13 @@ function renderLotCapacity(filledCount) {
   elements.lotCapacity.classList.toggle("is-nearly-full", left > 0 && left <= 3);
   elements.lotCapacity.classList.toggle("is-full", left === 0);
   elements.lotCapacityText.textContent = left === 0
-    ? `All ${LOT_LIMIT} lots are filled`
-    : `${filled} of ${LOT_LIMIT} lots filled`;
+    ? `All ${LOT_LIMIT} items are filled`
+    : `${filled} of ${LOT_LIMIT} items filled`;
   elements.lotCapacityNote.textContent = left === 0
     ? "Thank you! The Bazaar is full."
     : left <= 3
-      ? `Only ${left} ${left === 1 ? "slot" : "slots"} left. Secure your lot first and raise funds.`
-      : `${left} slots left. Secure your lot first and raise funds.`;
+      ? `Only ${left} ${left === 1 ? "slot" : "slots"} left. Secure your item first and raise funds.`
+      : `${left} slots left. Secure your item first and raise funds.`;
   elements.lotCapacityBar.style.width = `${(filled / LOT_LIMIT) * 100}%`;
   elements.lotCapacity.setAttribute("aria-valuenow", String(filled));
 }
@@ -550,7 +550,7 @@ function renderLotCapacity(filledCount) {
 function createLotsFullMarkup() {
   return `
     <div class="entry-full">
-      <strong>All ${LOT_LIMIT} lots are filled. Thank you!</strong><span>See you at Kite All Hearts on 23 October.</span>
+      <strong>All ${LOT_LIMIT} items are filled. Thank you!</strong><span>See you at Kite All Hearts on 23 October.</span>
     </div>
   `;
 }
@@ -846,7 +846,7 @@ function rememberHomeCity(city) {
 function createInlineEntryMarkup() {
   const draft = inlineDraftValues || {};
   const entryTitle = document.getElementById("entryCardTitle");
-  if (entryTitle) entryTitle.textContent = editingLiveLot ? "Edit your lot" : "Add your lot";
+  if (entryTitle) entryTitle.textContent = editingLiveLot ? "Edit your item" : "Add your item";
   const mode = draft.contributorMode === "team" ? "team" : "you";
   const homeCity = defaultCity();
   const city = draft.city || (mode === "you" ? homeCity : "");
@@ -901,7 +901,7 @@ function createInlineEntryMarkup() {
         <span class="entry-card__spacer"></span>
         ${editingDraftId ? `<button type="button" data-inline-action="cancel">Cancel</button>` : ""}
         <button type="button" data-inline-action="preview">Preview</button>
-        <button type="button" data-inline-action="submit">${editingLiveLot ? "Save changes" : "Submit lot"}</button>
+        <button type="button" data-inline-action="submit">${editingLiveLot ? "Save changes" : "Submit item"}</button>
       </div>
     </form>
   `;
@@ -992,11 +992,11 @@ async function saveInlineEntry(targetStatus) {
     return null;
   }
   if (targetStatus === "pending" && !LOT_CITIES.includes(value("city"))) {
-    showToast("Choose the location for this lot.");
+    showToast("Choose the location for this item.");
     return;
   }
   if (targetStatus === "pending" && title && description && contributor && startingBid && quantity && !inlineImages.length) {
-    showToast("Add at least one photo of your lot.");
+    showToast("Add at least one photo of your item.");
     return;
   }
   if (targetStatus === "pending" && (!title || !description || !contributor || !startingBid || !quantity)) {
@@ -1042,7 +1042,7 @@ async function saveInlineEntry(targetStatus) {
     }
   } catch (error) {
     console.error(`Could not save ${targetStatus} contribution to VibeHub.`, error);
-    showToast(storageErrorMessage(error, targetStatus === "draft" ? "save the draft" : "submit the lot"));
+    showToast(storageErrorMessage(error, targetStatus === "draft" ? "save the draft" : "submit the item"));
     row.querySelectorAll("button").forEach((button) => { button.disabled = false; });
     return null;
   }
@@ -1066,7 +1066,7 @@ async function saveInlineEntry(targetStatus) {
   }
   showToast(targetStatus === "draft"
     ? "Draft saved privately to your VibeHub account."
-    : (wasLiveEdit ? "Lot updated." : "Your lot is on the board."));
+    : (wasLiveEdit ? "Item updated." : "Your item is on the board."));
   return contribution;
 }
 
@@ -1087,7 +1087,7 @@ function editInlineDraft(id) {
 function editOwnLot(id) {
   const lot = contributions.find((item) => item.id === id && item.status !== "draft");
   if (!lot || !isContributionOwner(lot)) {
-    showToast("Only the contributor can edit this lot.");
+    showToast("Only the contributor can edit this item.");
     return;
   }
   const teamMembers = lot.team ? lot.team.split(",").map((m) => m.trim()).filter(Boolean).join("|") : "";
@@ -1256,7 +1256,7 @@ function resetAuctionTimer() {
 function renderAuctionItem() {
   const items = getAuctionItems();
   if (!items.length) {
-    showToast("There are no approved auction lots yet.");
+    showToast("There are no approved auction items yet.");
     return false;
   }
 
@@ -1266,7 +1266,7 @@ function renderAuctionItem() {
   const lotNumber = item.slotNumber || item.lotNumber || (auctionPreviewItems ? "—" : auctionIndex + 1);
   const startingBid = Number(item.startingBid || 500);
 
-  elements.auctionProgress.textContent = auctionPreviewItems ? "SLIDE PREVIEW" : `LOT ${auctionIndex + 1} OF ${items.length}`;
+  elements.auctionProgress.textContent = auctionPreviewItems ? "SLIDE PREVIEW" : `ITEM ${auctionIndex + 1} OF ${items.length}`;
   elements.auctionLotNumber.textContent = `#${lotNumber}`;
   elements.auctionTitle.textContent = item.title;
   elements.auctionContributor.textContent = contributorDisplay(item);
@@ -1274,7 +1274,7 @@ function renderAuctionItem() {
   elements.auctionLocation.textContent = item.city === "Remote" ? "Anywhere / remote" : cityLabel(item.city);
   elements.auctionQuantity.textContent = item.quantity;
   elements.auctionStartingBid.textContent = startingBid.toLocaleString("en-IN");
-  elements.auctionBidFormat.textContent = `#${lotNumber === "—" ? "lot" : lotNumber} - ${startingBid}`;
+  elements.auctionBidFormat.textContent = `#${lotNumber === "—" ? "item" : lotNumber} - ${startingBid}`;
   elements.auctionVisual.style.background = category.color;
   elements.auctionGlyph.textContent = category.glyph;
 
@@ -1284,11 +1284,16 @@ function renderAuctionItem() {
   elements.auctionVisual.querySelector(".auction-gallery")?.remove();
   if (slideImages.length) {
     const gallery = document.createElement("div");
-    gallery.className = `auction-gallery auction-gallery--${slideImages.length}`;
-    gallery.innerHTML = slideImages
-      .map((image, index) => `<img src="${escapeHtml(lotImageUrl(image))}" alt="${escapeHtml(item.title)} photo ${index + 1}">`)
-      .join("");
+    const multiple = slideImages.length > 1;
+    gallery.className = `auction-gallery${multiple ? " auction-gallery--carousel" : ""}`;
+    gallery.innerHTML = `<div class="auction-gallery__track">${slideImages
+      .map((image, index) => `<img src="${escapeHtml(lotImageUrl(image))}" alt="${escapeHtml(item.title)} photo ${index + 1} of ${slideImages.length}">`)
+      .join("")}</div>${multiple ? `
+      <button class="auction-gallery__arrow auction-gallery__arrow--prev" type="button" data-gallery-step="-1" aria-label="Previous photo">‹</button>
+      <button class="auction-gallery__arrow auction-gallery__arrow--next" type="button" data-gallery-step="1" aria-label="Next photo">›</button>
+      <div class="auction-gallery__dots" aria-hidden="true">${slideImages.map(() => "<i></i>").join("")}</div>` : ""}`;
     elements.auctionVisual.appendChild(gallery);
+    if (multiple) setGallerySlide(gallery, 0);
     elements.auctionGlyph.hidden = true;
   } else {
     elements.auctionGlyph.hidden = false;
@@ -1299,6 +1304,33 @@ function renderAuctionItem() {
   resetAuctionTimer();
   return true;
 }
+
+function setGallerySlide(gallery, index) {
+  const count = gallery.querySelectorAll(".auction-gallery__track img").length;
+  const next = (index + count) % count;
+  gallery.dataset.index = String(next);
+  gallery.querySelector(".auction-gallery__track").style.transform = `translateX(-${next * 100}%)`;
+  gallery.querySelectorAll(".auction-gallery__dots i").forEach((dot, i) => dot.classList.toggle("is-active", i === next));
+}
+
+document.addEventListener("click", (event) => {
+  const arrow = event.target.closest("[data-gallery-step]");
+  if (!arrow) return;
+  const gallery = arrow.closest(".auction-gallery");
+  setGallerySlide(gallery, Number(gallery.dataset.index || 0) + Number(arrow.dataset.galleryStep));
+});
+
+let galleryTouchX = null;
+document.addEventListener("touchstart", (event) => {
+  galleryTouchX = event.target.closest(".auction-gallery--carousel") ? event.touches[0].clientX : null;
+}, { passive: true });
+document.addEventListener("touchend", (event) => {
+  const gallery = event.target.closest(".auction-gallery--carousel");
+  if (!gallery || galleryTouchX === null) return;
+  const dx = event.changedTouches[0].clientX - galleryTouchX;
+  galleryTouchX = null;
+  if (Math.abs(dx) > 40) setGallerySlide(gallery, Number(gallery.dataset.index || 0) + (dx < 0 ? 1 : -1));
+});
 
 function openAuctionMode(itemId = null, previewItem = null) {
   if (previewItem) {
@@ -1364,7 +1396,7 @@ function startAuctionTimer() {
       clearInterval(auctionTimerId);
       auctionTimerId = null;
       elements.auctionStartTimer.textContent = "Bidding closed · Restart";
-      showToast("Time! Bidding is closed for this lot.");
+      showToast("Time! Bidding is closed for this item.");
     }
   }, 1000);
 }
@@ -1486,7 +1518,7 @@ elements.form.addEventListener("submit", async (event) => {
     await persistSubmittedContribution(contribution, true);
   } catch (error) {
     console.error("Could not submit the contribution to VibeHub.", error);
-    elements.formError.textContent = storageErrorMessage(error, "submit the lot");
+    elements.formError.textContent = storageErrorMessage(error, "submit the item");
     elements.formError.hidden = false;
     elements.submitButton.disabled = false;
     return;
@@ -1681,7 +1713,7 @@ const handleBoardClick = async (event) => {
   if (deleteButton) {
     const contribution = contributions.find((item) => item.id === deleteButton.dataset.deleteOwnLot);
     if (!contribution || !isContributionOwner(contribution)) {
-      showToast("Only the contributor can delete this lot.");
+      showToast("Only the contributor can delete this item.");
       return;
     }
     if (!window.confirm(`Delete “${contribution.title}”? This cannot be undone.`)) return;
@@ -1705,7 +1737,7 @@ const handleBoardClick = async (event) => {
       showToast(`Deleted “${contribution.title}”.`);
     } catch (error) {
       console.error("Could not delete the contribution from VibeHub.", error);
-      showToast(storageErrorMessage(error, "delete the lot"));
+      showToast(storageErrorMessage(error, "delete the item"));
       deleteButton.disabled = false;
     }
   }
@@ -1734,7 +1766,7 @@ elements.adminList.addEventListener("click", async (event) => {
     }
   } catch (error) {
     console.error("Could not update the VibeHub contribution.", error);
-    showToast(storageErrorMessage(error, "update the lot"));
+    showToast(storageErrorMessage(error, "update the item"));
     await refreshStoredContributions();
     return;
   }
@@ -1744,7 +1776,7 @@ elements.adminList.addEventListener("click", async (event) => {
 });
 
 document.querySelector("#resetDemo").addEventListener("click", async () => {
-  const confirmed = window.confirm("Clear your saved draft? Submitted lots in VibeHub will not be removed.");
+  const confirmed = window.confirm("Clear your saved draft? Submitted items in VibeHub will not be removed.");
   if (!confirmed) return;
   try {
     await vibeStorage.data.delete(DRAFT_KEY);
@@ -1826,7 +1858,7 @@ function renderMemories() {
   if (!memoryTrack) return;
   const cards = (copy) => lastYearLots.map((lot, index) => `
     <button class="memory-card" type="button" data-memory-index="${index}"${copy ? ' aria-hidden="true" tabindex="-1"' : ""}>
-      <img src="${lot.thumb}" alt="${copy ? "" : `${escapeHtml(lot.title)}, a lot from GIVE Bazaar 2025`}" width="560" height="315">
+      <img src="${lot.thumb}" alt="${copy ? "" : `${escapeHtml(lot.title)}, an item from GIVE Bazaar 2025`}" width="560" height="315">
       ${lot.raised ? `<span class="memory-card__raised">Sold for ${formatRupees(lot.raised)}${lot.bids.length > 1 ? ` <small>× ${lot.bids.length} bids</small>` : ""}</span>` : ""}
     </button>
   `).join("");
@@ -1839,7 +1871,7 @@ function showMemory(index) {
   memoryIndex = (index + lastYearLots.length) % lastYearLots.length;
   const lot = lastYearLots[memoryIndex];
   memoryLightboxImage.src = lot.full;
-  memoryLightboxImage.alt = `${lot.title}, a lot from GIVE Bazaar 2025`;
+  memoryLightboxImage.alt = `${lot.title}, an item from GIVE Bazaar 2025`;
   memoryLightboxCaption.textContent = `${lot.title} · ${memoryIndex + 1} of ${lastYearLots.length}`;
   memoryLightboxRaised.hidden = !lot.raised;
   memoryLightboxRaised.innerHTML = lot.raised ? `Sold for ${formatRupees(lot.raised)}${lot.bids.length > 1 ? ` <small>× ${lot.bids.length} bids</small>` : ""}` : "";
