@@ -3465,5 +3465,41 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 }
 
 @media (min-width: 761px) {
-  .auction-table { min-width: 1080px; }
+  .auction-table { min-width: 0; width: 100%; table-layout: fixed; }
+  .auction-table-wrap { overflow-x: hidden; margin-right: 0; }
+  .auction-table thead th:nth-child(1) { width: 72px; }
+  .auction-table thead th:nth-child(2) { width: auto; }
+  .auction-table thead th:nth-child(3) { width: 19%; }
+  .auction-table thead th:nth-child(4) { width: 11%; }
+  .auction-table thead th:nth-child(5) { width: 12%; }
+  .auction-table thead th:nth-child(6) { width: 118px; }
+  .auction-table thead th:nth-child(7) { width: 76px; }
+  .auction-table thead th { white-space: normal; }
+  .auction-table td { overflow-wrap: break-word; }
+  .table-contributor { min-width: 0; }
+  .table-contributor > :last-child { min-width: 0; white-space: normal; }
+}
+
+@media (min-width: 761px) {
+  .auction-table thead th:nth-child(3) { width: 17%; }
+  .auction-table thead th:nth-child(4) { width: 10%; }
+  .auction-table thead th:nth-child(5) { width: 11%; }
+  .table-contribution { min-width: 0; grid-template-columns: 64px minmax(0, 1fr); }
+  .table-contribution > * { min-width: 0; }
+  .table-contribution strong { overflow-wrap: break-word; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .table-contribution { grid-template-columns: minmax(0, 1fr); }
+  .table-contribution__visual { display: none; }
+}
+@media (min-width: 761px) and (max-width: 960px) {
+  .auction-table thead th:nth-child(5),
+  .auction-table td[data-label="Items or seats"] { display: none; }
+  .auction-table thead th:nth-child(3) { width: 22%; }
+  .auction-table thead th:nth-child(4) { width: 14%; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .auction-table td, .auction-table thead th { padding-left: 9px; padding-right: 9px; }
+  .auction-table thead th:nth-child(4) { width: 13%; }
+  .auction-table thead th:nth-child(3) { width: 16%; }
 }
