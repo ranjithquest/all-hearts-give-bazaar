@@ -3595,3 +3595,16 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
   .board-section { padding-bottom: 24px; }
   .support-section { padding-top: 40px; }
 }
+
+/* Photo frame follows the photo's own shape */
+.auction-visual.is-photo-fit {
+  min-height: 0;
+  aspect-ratio: auto;
+  max-width: 100%;
+  align-self: center;
+  justify-self: center;
+  transition: width .3s ease, height .3s ease;
+}
+.auction-dialog.is-slide-preview .auction-visual.is-photo-fit { aspect-ratio: auto; min-height: 0; }
+.auction-visual.is-photo-fit .auction-gallery img { object-fit: contain; }
+@media (prefers-reduced-motion: reduce) { .auction-visual.is-photo-fit { transition: none; } }

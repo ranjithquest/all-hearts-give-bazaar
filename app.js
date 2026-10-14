@@ -1391,9 +1391,11 @@ function renderAuctionItem() {
       <div class="auction-gallery__dots" aria-hidden="true">${slideImages.map(() => "<i></i>").join("")}</div>` : ""}`;
     elements.auctionVisual.appendChild(gallery);
     if (multiple) setGallerySlide(gallery, 0);
+    else fitAuctionVisualToPhoto();
     elements.auctionGlyph.hidden = true;
   } else {
     elements.auctionGlyph.hidden = false;
+    fitAuctionVisualToPhoto();
   }
 
   elements.auctionPrevious.disabled = auctionIndex === 0;
@@ -1408,7 +1410,43 @@ function setGallerySlide(gallery, index) {
   gallery.dataset.index = String(next);
   gallery.querySelector(".auction-gallery__track").style.transform = `translateX(-${next * 100}%)`;
   gallery.querySelectorAll(".auction-gallery__dots i").forEach((dot, i) => dot.classList.toggle("is-active", i === next));
+  fitAuctionVisualToPhoto();
 }
+
+// Size the photo frame to the current photo's aspect ratio so nothing is cropped.
+function fitAuctionVisualToPhoto() {
+  const visual = elements.auctionVisual;
+  const gallery = visual.querySelector(".auction-gallery");
+  const resetFrame = () => {
+    visual.classList.remove("is-photo-fit");
+    visual.style.width = "";
+    visual.style.height = "";
+  };
+  if (!gallery) {
+    resetFrame();
+    return;
+  }
+  const img = gallery.querySelectorAll(".auction-gallery__track img")[Number(gallery.dataset.index || 0)];
+  if (!img) return;
+  if (!img.complete || !img.naturalWidth) {
+    img.addEventListener("load", fitAuctionVisualToPhoto, { once: true });
+    return;
+  }
+  resetFrame();
+  if (!visual.getBoundingClientRect().width) return;
+  const ratio = img.naturalWidth / img.naturalHeight;
+  const border = parseFloat(getComputedStyle(visual).borderLeftWidth) || 0;
+  const isMobile = window.matchMedia("(max-width: 760px)").matches;
+  const maxWidth = visual.getBoundingClientRect().width - border * 2;
+  const maxHeight = window.innerHeight * (isMobile ? 0.55 : 0.68) - border * 2;
+  const width = Math.min(maxWidth, maxHeight * ratio);
+  visual.classList.add("is-photo-fit");
+  visual.style.width = `${Math.round(width + border * 2)}px`;
+  visual.style.height = `${Math.round(width / ratio + border * 2)}px`;
+}
+window.addEventListener("resize", () => {
+  if (elements.auctionVisual.querySelector(".auction-gallery")) fitAuctionVisualToPhoto();
+});
 
 document.addEventListener("click", (event) => {
   const arrow = event.target.closest("[data-gallery-step]");
@@ -1444,6 +1482,7 @@ function openAuctionMode(itemId = null, previewItem = null) {
   if (elements.adminDialog.open) elements.adminDialog.close();
   elements.auctionDialog.classList.toggle("is-slide-preview", Boolean(auctionPreviewItems));
   elements.auctionDialog.showModal();
+  fitAuctionVisualToPhoto();
 }
 
 function closeAuctionMode() {
