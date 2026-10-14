@@ -402,9 +402,12 @@ async function refreshStoredContributions({ showError = false } = {}) {
   if (!vibeStorage || storageReadOnly || storageRefreshRunning || document.hidden) return false;
   storageRefreshRunning = true;
   try {
-    const sharedContributions = await readSharedContributions();
-    const draft = await vibeStorage.data.get(DRAFT_KEY);
+    const [sharedContributions, draft] = await Promise.all([
+      readSharedContributions(),
+      vibeStorage.data.get(DRAFT_KEY).catch(() => null)
+    ]);
     mergeStoredContributions(sharedContributions, draft);
+    boardLoading = false;
     renderBoard();
     renderAdmin();
     storageLastError = null;
