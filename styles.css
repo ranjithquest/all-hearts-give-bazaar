@@ -3413,7 +3413,7 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 
 /* Heart sits lower with clear space below the Studio+91 logo */
 @media (min-width: 761px) {
-  .hero__logo-stage { margin-top: 28px; padding: 96px 0 64px; }
+  .hero__logo-stage { margin-top: 0; padding: 66px 0 64px; }
   .hero__logo-heart { top: 54%; }
 }
 @media (max-width: 760px) {
