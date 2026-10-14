@@ -307,6 +307,7 @@ const elements = {
 };
 
 let contributions = structuredClone(seedContributions);
+let boardLoading = true;
 let currentStep = 1;
 let pendingImage = "";
 let toastTimer;
@@ -585,6 +586,12 @@ function renderBoard() {
   elements.tableBody.innerHTML = visibleContributions.map(createTableRowMarkup).join("");
   elements.emptyState.hidden = visibleContributions.length > 0;
   elements.tableWrap.hidden = visibleContributions.length === 0;
+  const loader = document.querySelector("#boardLoading");
+  if (loader) loader.hidden = !boardLoading;
+  if (boardLoading) {
+    elements.emptyState.hidden = true;
+    elements.tableWrap.hidden = true;
+  }
   fitLotList();
 }
 
@@ -1822,7 +1829,10 @@ document.addEventListener("visibilitychange", async () => {
 
 renderBoard();
 updateCountdown();
-initializeStorage();
+initializeStorage().finally(() => {
+  boardLoading = false;
+  renderBoard();
+});
 
 const lastYearBids = [
   [1500], [2000], [1500, 2000], [1200], [1600], [3000], [3500], [5000],
