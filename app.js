@@ -602,7 +602,12 @@ function fitLotList() {
   wrap.style.maxHeight = "";
   const top = wrap.getBoundingClientRect().top;
   const bottom = rows[VISIBLE_LOT_ROWS - 1].getBoundingClientRect().bottom;
-  wrap.style.maxHeight = `${Math.ceil(bottom - top + 12)}px`;
+  const fiveRows = Math.ceil(bottom - top + 12);
+  const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
+  const headingBlock = document.querySelector(".board-list-heading");
+  const aboveList = headingBlock ? Math.max(0, top - headingBlock.getBoundingClientRect().top) : 0;
+  const available = window.innerHeight - headerHeight - aboveList - 24;
+  wrap.style.maxHeight = `${Math.max(260, Math.min(fiveRows, available))}px`;
 }
 if (window.ResizeObserver) {
   new ResizeObserver(() => fitLotList()).observe(elements.tableBody);

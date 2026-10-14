@@ -3463,3 +3463,7 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 @media (max-width: 760px) and (prefers-reduced-motion: reduce) {
   .hero__logo-heart { animation: none; }
 }
+
+@media (min-width: 761px) {
+  .auction-table { min-width: 1080px; }
+}
