@@ -606,6 +606,7 @@ function fitLotList() {
   if (isMobile || rows.length <= VISIBLE_LOT_ROWS || wrap.hidden) {
     wrap.classList.remove("is-capped");
     wrap.style.maxHeight = "";
+    updateLotMoreHint();
     return;
   }
   wrap.classList.add("is-capped");
@@ -618,7 +619,28 @@ function fitLotList() {
   const aboveList = headingBlock ? Math.max(0, top - headingBlock.getBoundingClientRect().top) : 0;
   const available = window.innerHeight - headerHeight - aboveList - 24;
   wrap.style.maxHeight = `${Math.max(260, Math.min(fiveRows, available))}px`;
+  updateLotMoreHint();
 }
+function updateLotMoreHint() {
+  const hint = document.querySelector("#lotMoreHint");
+  if (!hint) return;
+  const wrap = elements.tableWrap;
+  if (!wrap.classList.contains("is-capped")) {
+    hint.hidden = true;
+    wrap.classList.remove("has-more");
+    return;
+  }
+  const wrapBottom = wrap.getBoundingClientRect().bottom;
+  const below = [...elements.tableBody.rows].filter((row) => row.getBoundingClientRect().bottom > wrapBottom + 4).length;
+  hint.hidden = below === 0;
+  wrap.classList.toggle("has-more", below > 0);
+  document.querySelector("#lotMoreHintText").textContent = `Scroll for ${below} more item${below === 1 ? "" : "s"}`;
+}
+elements.tableWrap.addEventListener("scroll", updateLotMoreHint, { passive: true });
+document.querySelector("#lotMoreHint")?.addEventListener("click", () => {
+  const wrap = elements.tableWrap;
+  wrap.scrollBy({ top: wrap.clientHeight * 0.8, behavior: "smooth" });
+});
 if (window.ResizeObserver) {
   new ResizeObserver(() => fitLotList()).observe(elements.tableBody);
 }
