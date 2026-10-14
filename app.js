@@ -675,7 +675,14 @@ function resizeImageFile(file, maxSide = 1600) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
-      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Could not process image."))), "image/jpeg", 0.85);
+      img.onerror = null;
+      img.src = "";
+      canvas.toBlob((blob) => {
+        // Free canvas memory right away; phones cap total canvas memory.
+        canvas.width = 0;
+        canvas.height = 0;
+        blob ? resolve(blob) : reject(new Error("Could not process image."));
+      }, "image/jpeg", 0.85);
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("That file is not a readable image.")); };
     img.src = url;
@@ -691,7 +698,7 @@ function inlineImagesMarkup() {
   const canAdd = inlineImages.length < MAX_LOT_IMAGES;
   return `${thumbs}${canAdd ? `
     <label class="entry-photo-add${inlineImagesBusy ? " is-busy" : ""}">
-      <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple data-inline-images${inlineImagesBusy ? " disabled" : ""}>
+      <input type="file" accept="image/*" multiple data-inline-images${inlineImagesBusy ? " disabled" : ""}>
       <span>${inlineImagesBusy ? "Uploading…" : `+ Add photos <small>${inlineImages.length}/${MAX_LOT_IMAGES}</small>`}</span>
     </label>` : ""}`;
 }
@@ -701,31 +708,89 @@ function refreshInlineImages() {
   if (holder) holder.innerHTML = inlineImagesMarkup();
 }
 
+function withTimeout(promise, ms, message) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); })
+  ]).finally(() => clearTimeout(timer));
+}
+
+function isImageFile(file) {
+  return file.type ? file.type.startsWith("image/") : /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name || "");
+}
+
+function setInlineUploadStatus(text) {
+  const label = elements.entryHolder.querySelector(".entry-photo-add");
+  if (!label) return;
+  label.classList.add("is-busy");
+  const input = label.querySelector("input");
+  if (input) input.disabled = true;
+  const span = label.querySelector("span");
+  if (span) span.textContent = text;
+}
+
+function appendInlineThumb(image, index) {
+  const label = elements.entryHolder.querySelector(".entry-photo-add");
+  if (!label) return;
+  label.insertAdjacentHTML("beforebegin", `
+    <span class="entry-photo">
+      <img src="${escapeHtml(lotImageUrl(image))}" alt="Photo ${index + 1}">
+    </span>`);
+}
+
 async function addInlineImages(files) {
   if (!vibeStorage || storageReadOnly) {
     showToast("Sign in through the internal VibeHub project to add photos.");
     return;
   }
+  if (inlineImagesBusy) return;
+  const all = [...files];
+  const images = all.filter(isImageFile);
   const room = MAX_LOT_IMAGES - inlineImages.length;
-  const picked = [...files].filter((file) => file.type.startsWith("image/")).slice(0, room);
-  if (files.length > room) showToast(`You can add up to ${MAX_LOT_IMAGES} photos per lot.`);
-  if (!picked.length) return;
+  const picked = images.slice(0, room);
+  if (!picked.length) {
+    showToast(room <= 0 ? `Each item can have up to ${MAX_LOT_IMAGES} photos.` : "Please choose a photo (JPG, PNG or HEIC).", 6000);
+    return;
+  }
   inlineImagesBusy = true;
-  refreshInlineImages();
+  // Update the existing picker in place: replacing the input can invalidate its files on some phones.
+  setInlineUploadStatus(`Uploading 1 of ${picked.length}…`);
+  let failed = 0;
+  let lastError = null;
   try {
-    for (const file of picked) {
-      const blob = await resizeImageFile(file);
-      const key = `lot-photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      const meta = await vibeStorage.images.set(key, blob, { public: true });
-      inlineImages.push({ key, viewer: viewerEmail, url: meta?.url || "" });
+    for (const [index, file] of picked.entries()) {
+      setInlineUploadStatus(`Uploading ${index + 1} of ${picked.length}…`);
+      try {
+        const blob = await withTimeout(resizeImageFile(file), 30000, "Processing the photo took too long.");
+        const key = `lot-photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const meta = await withTimeout(vibeStorage.images.set(key, blob, { public: true }), 90000, "Uploading the photo took too long.");
+        const image = { key, viewer: viewerEmail, url: meta?.url || "" };
+        inlineImages.push(image);
+        appendInlineThumb(image, inlineImages.length - 1);
+      } catch (error) {
+        failed += 1;
+        lastError = error;
+        console.error("Could not upload photo to VibeHub.", error);
+      }
     }
-  } catch (error) {
-    console.error("Could not upload photo to VibeHub.", error);
-    showToast(storageErrorMessage(error, "upload the photo"));
   } finally {
     inlineImagesBusy = false;
     refreshInlineImages();
   }
+  const added = picked.length - failed;
+  const parts = [`Added ${added} of ${picked.length} photo${picked.length === 1 ? "" : "s"}.`];
+  if (failed) {
+    const message = lastError?.message || "";
+    parts.push(message.includes("too long")
+      ? `${failed} didn't upload because the connection is slow. Please add ${failed === 1 ? "it" : "them"} again.`
+      : message.includes("readable") || message.includes("process")
+        ? `${failed} couldn't be read. Please try a JPG or PNG.`
+        : `${failed} didn't upload. ${storageErrorMessage(lastError, "upload the photo")}`);
+  }
+  if (images.length > room) parts.push(`Each item can have up to ${MAX_LOT_IMAGES} photos.`);
+  if (images.length < all.length) parts.push("Some files weren't photos.");
+  showToast(parts.join(" "), parts.length > 1 ? 7000 : 3200);
 }
 
 async function removeInlineImage(index) {
@@ -1433,11 +1498,11 @@ function startAuctionTimer() {
   }, 1000);
 }
 
-function showToast(message) {
+function showToast(message, duration = 3200) {
   clearTimeout(toastTimer);
   elements.toast.textContent = message;
   elements.toast.classList.add("is-visible");
-  toastTimer = setTimeout(() => elements.toast.classList.remove("is-visible"), 3200);
+  toastTimer = setTimeout(() => elements.toast.classList.remove("is-visible"), duration);
 }
 
 function updateCountdown() {
