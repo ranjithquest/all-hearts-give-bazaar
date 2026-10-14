@@ -1832,6 +1832,11 @@ document.addEventListener("visibilitychange", async () => {
 
 renderBoard();
 updateCountdown();
+if (boardLoading) {
+  document.querySelector("#boardLoading")?.removeAttribute("hidden");
+  elements.emptyState.hidden = true;
+  elements.tableWrap.hidden = true;
+}
 initializeStorage().finally(() => {
   boardLoading = false;
   renderBoard();
