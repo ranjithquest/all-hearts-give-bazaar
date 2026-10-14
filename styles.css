@@ -3554,3 +3554,7 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
 }
 @keyframes board-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .board-loading__spinner { animation-duration: 2.4s; } }
+
+/* Location chip on the preview slide (no label) */
+.auction-facts div { min-width: 0; }
+.auction-facts strong { margin-top: 0; }
