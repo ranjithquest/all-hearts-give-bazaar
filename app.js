@@ -575,7 +575,7 @@ function renderBoard() {
   renderLotCapacity(rankedLots.length);
   const matchingContributions = contributions
     .filter((item) => ["approved", "pending", "draft"].includes(item.status))
-    .filter((item) => activeCity === "all" || item.city === activeCity)
+    .filter((item) => activeCity === "all" || item.city === activeCity || item.city === ALL_LOCATIONS)
     .sort((a, b) => {
       if ((a.status === "draft") !== (b.status === "draft")) return a.status === "draft" ? -1 : 1;
       return String(b.createdAt || "").localeCompare(String(a.createdAt || ""))
@@ -903,6 +903,8 @@ function readInlineContributor(row) {
 }
 
 const LOT_CITIES = ["Hyderabad", "Bengaluru", "Noida"];
+const ALL_LOCATIONS = "All";
+const ENTRY_CITIES = [...LOT_CITIES, ALL_LOCATIONS];
 const HOME_CITY_KEY = "give-bazaar-home-city";
 // Office locations from the work directory; people not listed get theirs remembered once they pick.
 const KNOWN_HOME_CITIES = {
@@ -917,6 +919,7 @@ const KNOWN_HOME_CITIES = {
 let savedHomeCity = "";
 
 function cityLabel(city) {
+  if (city === ALL_LOCATIONS) return "All locations";
   return city === "Bengaluru" ? "Bangalore" : city;
 }
 
@@ -973,7 +976,7 @@ function createInlineEntryMarkup() {
         <div class="entry-field entry-field--full"><span>Location</span>
           <input type="hidden" data-inline-field="city" value="${escapeHtml(city)}">
           <div class="entry-chips" role="radiogroup" aria-label="Location">
-            ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"]].sort(([a], [b]) => (b === homeCity) - (a === homeCity)).map(([value, label]) => `
+            ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"], [ALL_LOCATIONS, "All locations"]].sort(([a], [b]) => (b === homeCity) - (a === homeCity)).map(([value, label]) => `
               <button type="button" role="radio" class="entry-chip" data-entry-city="${value}" aria-checked="${city === value}">${label}</button>`).join("")}
           </div>
         </div>
@@ -1088,7 +1091,7 @@ async function saveInlineEntry(targetStatus) {
     showToast("Hang on, your photos are still uploading.");
     return null;
   }
-  if (targetStatus === "pending" && !LOT_CITIES.includes(value("city"))) {
+  if (targetStatus === "pending" && !ENTRY_CITIES.includes(value("city"))) {
     showToast("Choose the location for this item.");
     return;
   }
