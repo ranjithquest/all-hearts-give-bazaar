@@ -976,7 +976,11 @@ function createInlineEntryMarkup() {
         <div class="entry-field entry-field--full"><span>Location</span>
           <input type="hidden" data-inline-field="city" value="${escapeHtml(city)}">
           <div class="entry-chips" role="radiogroup" aria-label="Location">
-            ${[["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"], [ALL_LOCATIONS, "All locations"]].sort(([a], [b]) => (b === homeCity) - (a === homeCity)).map(([value, label]) => `
+            ${(() => {
+              const cities = [["Hyderabad", "Hyderabad"], ["Bengaluru", "Bangalore"], ["Noida", "Noida"]];
+              const home = cities.filter(([value]) => value === homeCity);
+              return [...home, [ALL_LOCATIONS, "All locations"], ...cities.filter(([value]) => value !== homeCity)];
+            })().map(([value, label]) => `
               <button type="button" role="radio" class="entry-chip" data-entry-city="${value}" aria-checked="${city === value}">${label}</button>`).join("")}
           </div>
         </div>
