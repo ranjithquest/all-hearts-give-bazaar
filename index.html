@@ -8,13 +8,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&amp;family=Archivo+Black&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=122">
+  <link rel="stylesheet" href="styles.css?v=123">
   <script>
     if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
       document.write('<script src="vibehub-storage-local.js" data-project-id="studio91-give-bazaar-2026"><\/script>');
     }
   </script>
-  <script src="winners.js?v=122" defer></script>
+  <script src="winners.js?v=123" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -32,37 +32,32 @@
   <main id="main">
     <section class="section results-section" id="top" aria-labelledby="resultsTitle">
       <div class="results-hero">
+        <p class="winner-prompt">Won a bid? <a href="#winnersList"><strong>Find your item below</strong></a> to donate</p>
         <div class="raised-stage">
           <img class="raised-stage__heart" src="heart-sparkle.png" alt="" aria-hidden="true">
           <p class="raised-stage__eyebrow">Funds raised with Microsoft match</p>
           <p class="raised-stage__amount" aria-label="₹5,40,000"><span class="raised-stage__rupee">₹</span>5,40,000</p>
           <p class="raised-stage__sub">Studio+91 · GIVE Bazaar 2026</p>
-          <ul class="raised-stage__faces" id="contributorFaces" aria-label="Our contributors"></ul>
+          <ul class="raised-stage__faces" id="winnerRing" aria-label="Our bid winners"></ul>
         </div>
-        <div class="winner-wall" aria-label="Our bid winners">
-          <ul id="winnerWall"></ul>
-          <p id="winnerWallCount"></p>
-        </div>
+        <p class="donated-count" id="donatedCount"></p>
         <h2 id="resultsTitle" class="sr-only">Together we raised ₹5,40,000</h2>
-        <p>Thank you, Studio+91. With Microsoft match, across 16 items and three locations at All Hearts 2026. If you won a bid, here’s how to turn it into a donation.</p>
       </div>
 
-      <ol class="flow-steps" aria-label="How to complete your donation">
-        <li><b>1</b><strong>Find your win</strong><span>Search your name in the list below to see your item and amount.</span></li>
-        <li><b>2</b><strong>Pick a cause</strong><span>Choose any one of the four causes below.</span></li>
-        <li><b>3</b><strong>Donate your bid</strong><span>Donate your winning amount on Benevity so Microsoft matches it.</span></li>
-        <li><b>4</b><strong>Share proof</strong><span>Post the payment screenshot with your item name in the Bid Winners Teams group.</span></li>
-        <li><b>5</b><strong>Receive your item</strong><span>The contributor gets in touch to arrange the handover or experience.</span></li>
+      <ol class="flow-steps flow-steps--three" aria-label="How it works">
+        <li><b>1</b><strong>Find your item</strong><span>Search your name in the list below and tap Donate.</span></li>
+        <li><b>2</b><strong>Donate &amp; upload proof</strong><span>Donate on Benevity, then upload the payment screenshot.</span></li>
+        <li><b>3</b><strong>Get your gift</strong><span>The contributor reaches out to arrange it. You two coordinate directly.</span></li>
       </ol>
 
-      <div class="results-block">
-        <h3>Choose a cause</h3>
-        <div class="cause-grid" id="causeGrid"></div>
+      <div class="winner-wall" aria-label="Our contributors">
+        <p class="winner-wall__label">Gifts added by</p>
+        <ul id="contributorRow"></ul>
       </div>
 
       <div class="results-block">
         <div class="winners-head">
-          <h3>What we added &amp; who won</h3>
+          <h3>What we added, who won &amp; donate</h3>
           <label class="winners-search"><span class="sr-only">Search winners</span><input type="search" id="winnerSearch" placeholder="Search a name or item" autocomplete="off"></label>
         </div>
         <div class="winners-list" id="winnersList"></div>

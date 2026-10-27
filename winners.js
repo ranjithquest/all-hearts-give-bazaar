@@ -23,6 +23,12 @@ const EVENT_EXTRA_LOTS = [{
 }];
 let boardLots = [];
 let vibeStorage = null;
+let donations = new Map();
+const DONATION_KEY_PREFIX = "give-bazaar-donation-";
+const winnerSlug = (name) => String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+const donationKey = (letter, name) => `${(letter || "x").toLowerCase()}-${winnerSlug(name)}`;
+let openPanel = "";
+let panelReplacing = false;
 const STUDIO_ROSTER = [["Aadith V A","vaaadith"],["Aaron Lepcha","aaronlepcha"],["Aarya Ghodke","aaryaghodke"],["Aarya Kabara","kabaraaarya"],["Abhijeet Singh","abhijeet.singh"],["Abhinav Mishra","abhinamishra"],["Abhishek Dutta","abhidutta"],["Abhishek Kshirsagar","abkshirsagar"],["Abhishek Ranjan","abhisranjan"],["Aditi Bhatt","aditibhatt"],["Aditya Laad","adityalaad"],["Ajay Agarwal","agarwalajay"],["Akhil Prakash","akhilprakash"],["Akshit Verma","akshitverma"],["Alivia Chaudhuri","alchaudhuri"],["Amalkrishna P S","aps"],["Amya Rai","amyarai"],["Anant Tambade","ananttambade"],["Ananya .","ananya"],["Anchal Bathla","anchalbathla"],["Anish Abraham","anishabraham"],["Ankur Gupta","ankurgu"],["Ankur Parihar","ankurparihar"],["Anshika Khola","kholaanshika"],["Anudish Koshal","akoshal"],["Anuja Kulkarni","anukulkarni"],["Apeksha Gadwal","agadwal"],["Apoorva Agrawal","apooragrawal"],["Arjit Bhagat","arjitbhagat"],["Armeen Kapadia Basavaraju","arbasavaraju"],["Arushi Tandon","arushitandon"],["Aryan Karkera","karkeraaryan"],["Ashley Lobo","loboashley"],["Atharva Vankundre","avankundre"],["Ayushi Singh","singhayushi"],["Chirag Bansal","chiragbansal"],["Deepika Dhupar","ddhupar"],["Deepika Nanda","deepikananda"],["Dhanya Viswanath","dhanyav"],["Eemon Roy","eemonroy"],["Fayaz PK","fayazpk"],["Harinie Ananth","hananth"],["Isha Agrawal","ishaagrawal"],["Jayawant Tewari","jayawant.tewari"],["Jui Sonawane","juisonawane"],["June Sardar","junesardar"],["Juraij Kaja Moideen","jkajamoideen"],["Justin Varacheril George","jgeorge"],["Kashish Mehta","kashishmehta"],["Kiran Nadendla","knadendla"],["Komal Singh","komalsingh"],["Krushna Shitap","kshitap"],["Manas Karambelkar","mkarambelkar"],["Manjiri Durge","manjiridurge"],["Meher Jangra","meherjangra"],["Mohamed Siddique","mosiddique"],["Mohan Kumar","mgangappa"],["Monika Nagar","monikanagar"],["Mrigank Haleangadi","mhaleangadi"],["Narayan Menon","narayan.menon"],["Naved Khan","navedkhan"],["Nebin Biju","nebinbiju"],["Neha Motghare","nemot"],["Neha Singh","nesingh"],["Ninad Kale","ninadkale"],["Nithin Chandra S R","nisr"],["Nithin Ismail","nithin.ismail"],["Param Ranjan","paramranjan"],["Poonam Savale","poonamsavale"],["Pradnya Patil","pradnyapatil"],["Pragati Bansal","pragati.bansal"],["Prathima Sharma","prathsharma"],["Pratik Sangeetha","psangeetha"],["Preeti Sahasrabuddhe","preetis"],["Priya .","priy"],["Priyanka Saha","priyankasaha"],["Pulak Anand","pulakanand"],["Puneeth Hegde","puneethhegde"],["Rachit Jain","rachitjain"],["Rahul Goradia","rahulgoradia"],["Raj Rajpara","rajrajpara"],["Ramanuj Nanhoriya","rnanhoriya"],["Ranjana Sharma","ransharma"],["Ranjith Ravi","ranjithravi"],["Rhea Gupta","guptarhea"],["Rohan Baruah","rohanbaruah"],["Ruchi Batra","batraruchi"],["Sarah Zaki","sazaki"],["Sargam Prakash","prakash.sargam"],["Sasha Cherian","sashacherian"],["Satya Srivastava","satyasriv"],["Saugata Pramanik","sapramanik"],["Saurabh Singh","singhsaur"],["Saurav Harsh","sauravharsh"],["Shivani Mate","shivanimate"],["Shravani Gaikwad","shgaikwad"],["Shubham Nikhara","shubham.nikhara"],["Shweta Ratanpura","sratanpura"],["Siddharth S Kumar","siskumar"],["Simran Singh","simransingh"],["Snigdha Srivastava","srivastavasn"],["Sonsy Mishra","sonsymishra"],["Soumya Kasuganti","skasuganti"],["Srihari Hulikal Muralidhar","sriharih"],["Stuti Kamboj","stutikamboj"],["Sunair D","sunairrajd"],["Tania Jain","jaintania"],["Tejus Nagdev","tejusnagdev"],["Thuli Chishi","thulichishi"],["Timothy Jayaraj","tjayaraj"],["Udayan Vidyanta","uvidyanta"],["Vartika Agarwal","varagarwal"],["Venkat Gopal","vevenka"],["Vidhi Bhati","vidhibhati"],["Vijayta Sharma","vijsharma"],["Vinod Mulky","vinodmulky"],["Vishwam Rajagopal","vrajagopal"],["Vivek Menon","vmuralidhar"],["Yamini Gupta","yaminigupta"]];
 
 function escapeHtml(value = "") {
@@ -60,9 +66,11 @@ async function loadBoardLots() {
     EVENT_EXTRA_LOTS.forEach((extra) => {
       if (!boardLots.some((lot) => lotLetter(lot.title) === lotLetter(extra.title))) boardLots.push(extra);
     });
+    donations = new Map(Object.entries(values)
+      .filter(([key, value]) => key.startsWith(DONATION_KEY_PREFIX) && value && typeof value === "object")
+      .map(([key, value]) => [key.slice(DONATION_KEY_PREFIX.length), value]));
     renderWinners();
-    renderWinnerWall();
-    renderContributorFaces();
+    renderHero();
   } catch (error) {
     console.warn("Could not load board items for winner photos.", error);
   }
@@ -94,17 +102,6 @@ const WINNING_BIDS = [
 ];
 
 const formatBidRupees = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
-
-function renderCauses() {
-  const grid = document.querySelector("#causeGrid");
-  if (!grid) return;
-  grid.innerHTML = DONATION_CAUSES.map((cause, i) => {
-    const body = `${cause.qr ? `<img class="cause-card__qr" src="${escapeHtml(cause.qr)}" alt="QR code to donate for ${escapeHtml(cause.name)}" width="300" height="300" loading="lazy">` : `<b>${i + 1}</b>`}<strong>${escapeHtml(cause.name)}</strong><span>${escapeHtml(cause.note)}</span>`;
-    return cause.url
-      ? `<a class="cause-card" href="${escapeHtml(cause.url)}" target="_blank" rel="noopener noreferrer">${body}<i aria-hidden="true">Donate ↗</i></a>`
-      : `<div class="cause-card cause-card--soon">${body}</div>`;
-  }).join("");
-}
 
 const titleWords = (text) => new Set(String(text).toLowerCase().replace(/post ?cards?/g, "postcards").replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !["the", "and", "for", "with", "you", "your", "set"].includes(w)));
 
@@ -210,7 +207,12 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       ${winners.length ? `
       <p class="winner-card__label">Bid winners</p>
       <ul class="winner-card__bids" aria-label="Bid winners">
-        ${winners.map(([name, amount]) => `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}"><span>${avatar(name)}${escapeHtml(name)}</span><b>${formatBidRupees(amount)}</b></li>`).join("")}
+        ${winners.map(([name, amount]) => {
+          const key = donationKey(letter, name);
+          const done = donations.has(key);
+          const open = openPanel === key;
+          return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}"><span>${avatar(name)}${escapeHtml(name)}</span><b>${formatBidRupees(amount)}</b><button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? "✓ Donated" : open ? "Close" : "Donate"}</button></li>${open ? `<li class="donate-inline">${donationPanel({ key, letter, title, by, byEmail, name, amount })}</li>` : ""}`;
+        }).join("")}
       </ul>
       <p class="winner-card__total">${winners.length > 1 ? `${winners.length} winners · ` : ""}${formatBidRupees(total)} raised</p>`
       : `<p class="winner-card__none">No winning bid this time</p>`}
@@ -219,51 +221,170 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
   document.querySelector("#winnersEmpty").hidden = rows.length > 0;
 }
 
-function renderWinnerWall() {
-  const wall = document.querySelector("#winnerWall");
-  if (!wall) return;
-  const names = [...new Map(WINNING_BIDS.flatMap((bid) => bid[3] || []).map(([name]) => [name.trim().toLowerCase(), name.trim()])).values()];
-  wall.innerHTML = names.map((name) => `<li><button type="button" data-name="${escapeHtml(name)}" title="${escapeHtml(name)}" aria-label="Show ${escapeHtml(name)}’s wins">${avatar(name)}</button></li>`).join("");
-  document.querySelector("#winnerWallCount").textContent = `${names.length} bid winners · tap a face to see their win`;
+
+function teamsChat(email, text) {
+  return `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}&message=${encodeURIComponent(text)}`;
 }
 
-function renderContributorFaces() {
-  const list = document.querySelector("#contributorFaces");
-  if (!list) return;
-  const seen = new Set();
-  const people = [];
+function donationPanel({ key, letter, title, by, byEmail, name, amount }) {
+  const record = donations.get(key);
+  const first = name.split(" ")[0];
+  const byFirst = String(by).split(/[ ,]/)[0];
+  if (record && !panelReplacing) {
+    const proof = lotImageUrl(record.proof);
+    const chat = byEmail ? teamsChat(byEmail, `Hi ${byFirst}, I won your GIVE Bazaar item${letter ? ` ${letter}` : ""} "${title}" and have completed my donation. When can we coordinate the gift?`) : "";
+    return `<div class="donate-done">
+      <span class="donate-done__tick" aria-hidden="true">✓</span>
+      <h4>${escapeHtml(first)}’s donation is in. Thank you!</h4>
+      <p>${escapeHtml(byFirst)} will reach out to arrange the gift. You two can coordinate directly.</p>
+      <div class="donate-done__actions">
+        ${chat ? `<a class="donate-chat" href="${escapeHtml(chat)}" target="_blank" rel="noopener noreferrer">${avatar(by, byEmail)}Chat with ${escapeHtml(byFirst)} in Teams ↗</a>` : ""}
+        ${proof ? `<a class="donate-proof" href="${escapeHtml(proof)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(proof)}" alt="Payment screenshot">View screenshot</a>` : ""}
+      </div>
+      <button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload a different screenshot</button>
+    </div>`;
+  }
+  const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>Donate ↗</i></a>`).join("");
+  return `<div class="donate-step">
+      <h4><b>1</b>Donate ${formatBidRupees(amount)} on Benevity</h4>
+      <p>Pick any one cause. Microsoft matches your donation.</p>
+      <div class="donate-causes">${causes}</div>
+    </div>
+    <div class="donate-step">
+      <h4><b>2</b>Upload your payment screenshot</h4>
+      <label class="donate-upload">
+        <input type="file" accept="image/*" data-proof-input>
+        <span data-proof-label><strong>Choose screenshot</strong><small>The Benevity receipt showing ${formatBidRupees(amount)}</small></span>
+        <img data-proof-preview alt="" hidden>
+      </label>
+      <button type="button" class="donate-submit" data-proof-submit="${escapeHtml(key)}" disabled>Submit donation proof</button>
+      <p class="donate-error" data-proof-error role="alert" hidden></p>
+    </div>
+    <div class="donate-step donate-step--next">
+      <h4><b>3</b>Get your gift</h4>
+      <p>Once submitted, ${escapeHtml(byFirst)} will reach out to arrange it with you.</p>
+    </div>`;
+}
+
+function findBid(key) {
+  for (const { lot, bid } of buildEntries()) {
+    const letter = lotLetter(lot?.title || bid?.[0]);
+    const hit = (bid?.[3] || []).find(([name]) => donationKey(letter, name) === key);
+    if (hit) return { letter, title: lot?.title || bid[0], by: lot?.contributor || bid[1], name: hit[0], amount: hit[1] };
+  }
+  return null;
+}
+
+async function submitProof(key, scope) {
+  const info = findBid(key);
+  const file = scope.querySelector("[data-proof-input]")?.files?.[0];
+  const button = scope.querySelector("[data-proof-submit]");
+  const error = scope.querySelector("[data-proof-error]");
+  if (!info || !file) return;
+  const fail = (msg) => { error.textContent = msg; error.hidden = false; button.disabled = false; button.textContent = "Submit donation proof"; };
+  if (!vibeStorage?.images || !vibeStorage?.shared || vibeStorage.isPublicShare) return fail("Please open the site signed in to VibeHub to upload.");
+  if (file.size > 10 * 1024 * 1024) return fail("That image is over 10 MB. Try a smaller screenshot.");
+  button.disabled = true;
+  button.textContent = "Uploading…";
+  error.hidden = true;
+  try {
+    const imageKey = `donation-${key}-${Date.now()}`;
+    const meta = await vibeStorage.images.set(imageKey, file, { public: true });
+    const record = { ...info, proof: { key: imageKey, viewer: vibeStorage.viewerEmail || "", url: meta?.url || "" }, submittedBy: vibeStorage.viewerEmail || "", at: new Date().toISOString() };
+    const old = donations.get(key);
+    await vibeStorage.shared.set(DONATION_KEY_PREFIX + key, record);
+    if (old?.proof?.key) vibeStorage.images.delete(old.proof.key).catch(() => {});
+    donations.set(key, record);
+    panelReplacing = false;
+    renderWinners();
+    renderHero();
+  } catch (err) {
+    console.error("Could not upload donation proof.", err);
+    fail("Upload didn't go through. Check your connection and try again.");
+  }
+}
+
+function winnerPeople() {
+  const map = new Map();
   buildEntries().forEach(({ lot, bid }) => {
-    const name = String(lot?.contributor || bid?.[1] || "").split(/,|&| and /)[0].trim();
-    const parts = name.toLowerCase().split(/\s+/);
+    const letter = lotLetter(lot?.title || bid?.[0]);
+    (bid?.[3] || []).forEach(([name]) => {
+      const slug = winnerSlug(name);
+      if (!map.has(slug)) map.set(slug, { name: name.trim(), keys: [] });
+      map.get(slug).keys.push(donationKey(letter, name));
+    });
+  });
+  return [...map.values()];
+}
+
+function renderHero() {
+  const people = winnerPeople();
+  const ring = document.querySelector("#winnerRing");
+  if (ring) {
+    ring.innerHTML = people.map(({ name, keys }, i) => {
+      const angle = (-90 + (i + 0.5) * (360 / people.length)) * Math.PI / 180;
+      const x = (50 + 47 * Math.cos(angle)).toFixed(1);
+      const y = (50 + 47 * Math.sin(angle)).toFixed(1);
+      const r = (i % 2 ? 1 : -1) * (3 + (i % 3) * 2);
+      const done = keys.every((k) => donations.has(k));
+      return `<li class="${done ? "is-done" : ""}" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" title="${escapeHtml(name)}${done ? " · donated" : ""}">${avatar(name)}${done ? `<i class="done-tick" aria-hidden="true">✓</i>` : ""}<span>${escapeHtml(name.split(" ")[0])}</span></li>`;
+    }).join("");
+  }
+  const counter = document.querySelector("#donatedCount");
+  if (counter) {
+    const doneCount = people.filter((p) => p.keys.every((k) => donations.has(k))).length;
+    counter.innerHTML = `<b>${doneCount} of ${people.length}</b> bid winners have donated`;
+  }
+  const row = document.querySelector("#contributorRow");
+  if (!row) return;
+  const seen = new Set();
+  const contributors = [];
+  buildEntries().forEach(({ lot, bid }) => {
+    const raw = String(lot?.contributor || bid?.[1] || "").split(/,|&| and /)[0].trim();
+    const parts = raw.toLowerCase().split(/\s+/);
     const key = `${parts[0].slice(0, 5)} ${parts.slice(1).join(" ")}`;
-    const email = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(name);
-    const handle = name.includes("@") || (!name.includes(" ") && name.includes("."));
-    if (!name || seen.has(key) || (email && seen.has(email))) return;
+    const email = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(raw);
+    if (!raw || seen.has(key) || (email && seen.has(email))) return;
     seen.add(key);
     if (email) seen.add(email);
-    const shown = handle ? name.split("@")[0].split(".").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ") : name;
-    people.push({ name: shown, email, letter: lotLetter(lot?.title || bid?.[0]) });
+    const name = raw.includes("@") || (!raw.includes(" ") && raw.includes(".")) ? raw.split("@")[0].split(".").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ") : raw;
+    contributors.push({ name, email });
   });
-  list.innerHTML = people.map(({ name, email, letter }, i) => {
-    const angle = (-90 + (i + 0.5) * (360 / people.length)) * Math.PI / 180;
-    const x = (50 + 45 * Math.cos(angle)).toFixed(1);
-    const y = (50 + 43 * Math.sin(angle)).toFixed(1);
-    const r = (i % 2 ? 1 : -1) * (3 + (i % 3) * 2);
-    return `<li style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" title="${escapeHtml(name)}${letter ? ` · Item ${letter}` : ""}">${avatar(name, email)}<span>${escapeHtml(name.split(" ")[0])}</span></li>`;
-  }).join("");
+  row.innerHTML = contributors.map(({ name, email }) => `<li><button type="button" data-filter="${escapeHtml(name.split(" ")[0])}" title="${escapeHtml(name)}" aria-label="Show items by ${escapeHtml(name)}">${avatar(name, email)}</button></li>`).join("");
 }
 
-renderCauses();
 renderWinners();
-renderWinnerWall();
-renderContributorFaces();
+renderHero();
 document.querySelector("#winnerSearch")?.addEventListener("input", (event) => renderWinners(event.target.value));
-document.querySelector("#winnerWall")?.addEventListener("click", (event) => {
-  const name = event.target.closest("button[data-name]")?.dataset.name;
-  const search = document.querySelector("#winnerSearch");
-  if (!name || !search) return;
-  search.value = name;
-  renderWinners(name);
-  document.querySelector("#winnersList")?.closest(".results-block, section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+document.addEventListener("click", (event) => {
+  const toggle = event.target.closest("[data-donate]")?.dataset.donate;
+  if (toggle) {
+    openPanel = openPanel === toggle ? "" : toggle;
+    panelReplacing = false;
+    renderWinners();
+    return;
+  }
+  const replace = event.target.closest("[data-replace]")?.dataset.replace;
+  if (replace) { panelReplacing = true; renderWinners(); return; }
+  const submit = event.target.closest("[data-proof-submit]");
+  if (submit) return submitProof(submit.dataset.proofSubmit, submit.closest(".donate-inline"));
+  const filter = event.target.closest("button[data-filter]")?.dataset.filter;
+  if (filter) {
+    const search = document.querySelector("#winnerSearch");
+    search.value = filter;
+    renderWinners(filter);
+    document.querySelector("#winnersList")?.closest(".results-block")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+});
+document.addEventListener("change", (event) => {
+  if (!event.target.matches("[data-proof-input]")) return;
+  const scope = event.target.closest(".donate-inline");
+  const file = event.target.files?.[0];
+  if (!file || !scope) return;
+  const preview = scope.querySelector("[data-proof-preview]");
+  preview.src = URL.createObjectURL(file);
+  preview.hidden = false;
+  scope.querySelector("[data-proof-label]").innerHTML = `<strong>${escapeHtml(file.name)}</strong><small>Tap to change</small>`;
+  scope.querySelector("[data-proof-submit]").disabled = false;
 });
 loadBoardLots();
