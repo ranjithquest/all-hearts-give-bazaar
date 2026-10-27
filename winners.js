@@ -245,7 +245,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
           const action = mine || coordView
             ? `<button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? `✓ Donated${isCoordinator() ? `<i class="donate-caret" aria-hidden="true">${open ? "▴" : "▾"}</i>` : ""}` : open ? "Close" : "Donate"}</button>`
             : `<span class="donate-status${done ? " donate-status--done" : ""}">${done ? "✓ Donated" : "Yet to donate"}</span>`;
-          return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}${mine ? " is-mine" : ""}"><span>${avatar(name)}${escapeHtml(name)}${mine ? `<em class="you-tag">You</em>` : ""}</span><b>${formatBidRupees(amount)}</b>${action}</li>${open ? `<li class="donate-inline">${coordView ? coordinatorDetails({ key, by, byEmail, name, amount }) : donationPanel({ key, letter, title, by, byEmail, name, amount })}</li>` : ""}`;
+          return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}${mine ? " is-mine" : ""}"><span>${avatar(name)}${escapeHtml(name)}${mine ? `<em class="you-tag">You</em>` : ""}</span><b>${formatBidRupees(amount)}</b>${action}</li>${open ? `<li class="donate-inline">${donationPanel({ key, letter, title, by, byEmail, name, amount, mine })}</li>` : ""}`;
         }).join("")}
       </ul>
       <p class="winner-card__total">${winners.length > 1 ? `${winners.length} winners · ` : ""}${formatBidRupees(total)} raised</p>`
@@ -260,13 +260,13 @@ function teamsChat(email, text) {
   return `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}&message=${encodeURIComponent(text)}`;
 }
 
-function donationPanel({ key, letter, title, by, byEmail, name, amount }) {
+function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = true }) {
   const record = donations.get(key);
   const first = name.split(" ")[0];
   const byFirst = String(by).split(/[ ,]/)[0];
   if (record && !panelReplacing) {
     const proof = lotImageUrl(record.proof);
-    const chat = byEmail ? teamsChat(byEmail, `Hi ${byFirst}, I won your GIVE Bazaar item${letter ? ` ${letter}` : ""} "${title}" and have completed my donation. When can we coordinate the gift?`) : "";
+    const chat = byEmail ? teamsChat(byEmail, !mine ? "" : `Hi ${byFirst}, I won your GIVE Bazaar item${letter ? ` ${letter}` : ""} "${title}" and have completed my donation. When can we coordinate the gift?`) : "";
     return `<div class="donate-done">
       <span class="donate-done__tick" aria-hidden="true">✓</span>
       <h4>${escapeHtml(first)}’s donation is in. Thank you!</h4>
@@ -275,8 +275,8 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount }) {
         ${chat ? `<a class="donate-chat" href="${escapeHtml(chat)}" target="_blank" rel="noopener noreferrer">${avatar(by, byEmail)}Chat with ${escapeHtml(byFirst)} in Teams ↗</a>` : ""}
         ${proof ? `<a class="donate-proof" href="${escapeHtml(proof)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(proof)}" alt="Payment screenshot">View screenshot</a>` : ""}
       </div>
-      <button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload a different screenshot</button>
-    </div>${isCoordinator() ? coordinatorDetails({ key, by, byEmail, name, amount }) : ""}`;
+      ${mine ? `<button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload a different screenshot</button>` : ""}
+    </div>`;
   }
   const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>Donate ↗</i></a>`).join("");
   return `<div class="donate-step">
@@ -298,30 +298,6 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount }) {
     <div class="donate-step donate-step--next">
       <h4><b>3</b>Get your gift</h4>
       <p>Once submitted, ${escapeHtml(byFirst)} will reach out to arrange it with you.</p>
-    </div>`;
-}
-
-function coordinatorDetails({ key, by, byEmail, name, amount }) {
-  const record = donations.get(key);
-  if (!record) return "";
-  const proof = lotImageUrl(record.proof);
-  const winnerEmail = emailFor(name) || (record.submittedBy || "").toLowerCase();
-  const when = record.at ? new Date(record.at).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : "";
-  const row = (label, value) => value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : "";
-  const chat = (email, who) => email ? `<a class="donate-chat" href="${escapeHtml(teamsChat(email, ""))}" target="_blank" rel="noopener noreferrer">${avatar(who, email)}Chat with ${escapeHtml(String(who).split(/[ ,]/)[0])} ↗</a>` : "";
-  return `<div class="coord-details">
-      <p class="coord-details__label">Coordinator view</p>
-      <div class="coord-details__body">
-        ${proof ? `<a class="coord-details__proof" href="${escapeHtml(proof)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(proof)}" alt="Payment screenshot from ${escapeHtml(name)}"><span>Open full screenshot ↗</span></a>` : `<p class="coord-details__noproof">No screenshot attached</p>`}
-        <dl>
-          ${row("Winner", escapeHtml(name))}
-          ${row("Bid amount", formatBidRupees(amount))}
-          ${row("Contributor", escapeHtml(by))}
-          ${row("Submitted by", escapeHtml(record.submittedBy || ""))}
-          ${row("Submitted on", escapeHtml(when))}
-        </dl>
-      </div>
-      <div class="donate-done__actions">${chat(winnerEmail, name)}${chat(byEmail, by)}</div>
     </div>`;
 }
 
