@@ -4055,3 +4055,49 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .winners-search input { width: min(420px, 100%); }
 .winners-search { width: min(420px, 100%); }
 .winners-search input { width: 100%; }
+
+/* Item preview */
+.winner-card__top[data-preview] { cursor: zoom-in; border-radius: 14px; transition: background .15s; }
+.winner-card__top[data-preview]:hover strong { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
+.winner-card__top[data-preview]:focus-visible { outline: 3px solid rgba(207, 4, 59, .35); outline-offset: 4px; }
+.item-preview {
+  width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
+  padding: 0; border: 0; border-radius: 22px; background: #fbf3e4; color: inherit;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .3); overflow: auto;
+}
+.item-preview::backdrop { background: rgba(30, 20, 15, .6); }
+.item-preview__close {
+  position: sticky; top: 12px; float: right; margin: 12px 12px -52px 0; z-index: 2;
+  width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255,255,255,.92);
+  font-size: 26px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.item-preview__main { display: block; width: 100%; max-height: 62vh; object-fit: contain; background: #2b2420; }
+.item-preview__main--empty { display: grid; place-items: center; height: 240px; font-size: 64px; color: var(--teal); background: #f3e2c6; }
+.item-preview__thumbs { display: flex; gap: 8px; padding: 12px 20px 0; overflow-x: auto; }
+.item-preview__thumbs button { flex: none; width: 56px; height: 56px; padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; cursor: pointer; background: none; opacity: .7; }
+.item-preview__thumbs button.is-active { border-color: var(--teal); opacity: 1; }
+.item-preview__thumbs img { width: 100%; height: 100%; object-fit: cover; }
+.item-preview__body { padding: 18px 22px 24px; display: grid; gap: 10px; }
+.item-preview__body h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 22px; }
+.item-preview__body h3 .winner-card__letter { position: static; flex: none; }
+.item-preview__body p { margin: 0; line-height: 1.6; white-space: pre-line; }
+.item-preview__body .winner-card__by { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Donate only for the signed-in winner */
+.donate-status {
+  flex: none; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  color: #7a6a58; background: rgba(0, 0, 0, .06); white-space: nowrap;
+}
+.donate-status--done { color: #1f7a45; background: #dcefe2; }
+.winner-card__bids li.is-mine { box-shadow: inset 0 0 0 2px var(--teal); }
+.you-tag {
+  margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-style: normal; font-size: 11px;
+  font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--teal);
+}
+
+.joy-title {
+  margin: 0 auto 10px; font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(34px, 4.6vw, 64px); line-height: 1.05; letter-spacing: -.02em; color: var(--ink); text-align: center;
+}
+.joy-title em { font-style: italic; color: var(--teal); }
+.joy-title em { white-space: nowrap; }

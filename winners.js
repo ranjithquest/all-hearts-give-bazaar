@@ -153,6 +153,20 @@ function emailFor(name) {
   return "";
 }
 
+function viewerEmail() {
+  return String((vibeStorage || window.vibehub?.storage)?.viewerEmail || "").toLowerCase();
+}
+
+function isViewer(name) {
+  const me = viewerEmail();
+  if (!me) return false;
+  const email = emailFor(name);
+  if (email) return email === me;
+  const alias = me.split("@")[0].replace(/[^a-z]/g, "");
+  const parts = String(name).toLowerCase().split(/\s+/).filter(Boolean);
+  return parts.length > 1 && alias.includes(parts[0]) && alias.includes(parts[parts.length - 1].slice(0, 4));
+}
+
 function avatar(name, email = emailFor(name)) {
   const img = email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" loading="lazy" onerror="this.remove()">` : "";
   return `<span class="person-avatar" aria-hidden="true">${escapeHtml(initials(name))}${img}</span>`;
@@ -195,12 +209,12 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
     const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
     return `
     <article class="winner-card${winners.length ? "" : " winner-card--open"}">
-      <div class="winner-card__top">
+      <div class="winner-card__top" role="button" tabindex="0" data-preview="${escapeHtml(title)}" aria-label="Preview ${escapeHtml(title)}">
         ${letter ? `<span class="winner-card__letter" aria-label="Item ${letter}">${letter}</span>` : ""}
         ${photo ? `<img class="winner-card__photo" src="${escapeHtml(photo)}" alt="" loading="lazy">` : `<span class="winner-card__photo winner-card__photo--empty" aria-hidden="true">♥</span>`}
         <div class="winner-card__item">
           <strong>${escapeHtml(title)}</strong>
-          <span class="winner-card__by">${avatar(by, byEmail)}Added by ${escapeHtml(by)}${city ? ` · ${escapeHtml(city)}` : ""}</span>
+          <span class="winner-card__by">${avatar(by, byEmail)}${escapeHtml(by)}${city ? ` · ${escapeHtml(city)}` : ""}</span>
           ${lot?.description ? `<p>${escapeHtml(lot.description)}</p>` : ""}
         </div>
       </div>
@@ -210,8 +224,12 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
         ${winners.map(([name, amount]) => {
           const key = donationKey(letter, name);
           const done = donations.has(key);
-          const open = openPanel === key;
-          return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}"><span>${avatar(name)}${escapeHtml(name)}</span><b>${formatBidRupees(amount)}</b><button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? "✓ Donated" : open ? "Close" : "Donate"}</button></li>${open ? `<li class="donate-inline">${donationPanel({ key, letter, title, by, byEmail, name, amount })}</li>` : ""}`;
+          const mine = isViewer(name);
+          const open = mine && openPanel === key;
+          const action = mine
+            ? `<button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? "✓ Donated" : open ? "Close" : "Donate"}</button>`
+            : `<span class="donate-status${done ? " donate-status--done" : ""}">${done ? "✓ Donated" : "Yet to donate"}</span>`;
+          return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}${mine ? " is-mine" : ""}"><span>${avatar(name)}${escapeHtml(name)}${mine ? `<em class="you-tag">You</em>` : ""}</span><b>${formatBidRupees(amount)}</b>${action}</li>${open ? `<li class="donate-inline">${donationPanel({ key, letter, title, by, byEmail, name, amount })}</li>` : ""}`;
         }).join("")}
       </ul>
       <p class="winner-card__total">${winners.length > 1 ? `${winners.length} winners · ` : ""}${formatBidRupees(total)} raised</p>`
@@ -356,7 +374,49 @@ function renderHero() {
 renderWinners();
 renderHero();
 document.querySelector("#winnerSearch")?.addEventListener("input", (event) => renderWinners(event.target.value));
+function openPreview(title) {
+  const entry = buildEntries().find(({ lot, bid }) => (lot?.title || bid?.[0]) === title);
+  if (!entry) return;
+  const { lot, bid } = entry;
+  const by = lot?.contributor || bid?.[1] || "";
+  const city = bid?.[2] || (lot?.city === "Remote" ? "Anywhere" : lot?.city || "");
+  const letter = lotLetter(title) || lotLetter(bid?.[0]);
+  const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
+  const photos = lot ? lotImages(lot).map(lotImageUrl).filter(Boolean) : [];
+  let dialog = document.querySelector("#itemPreview");
+  if (!dialog) {
+    dialog = document.createElement("dialog");
+    dialog.id = "itemPreview";
+    dialog.className = "item-preview";
+    document.body.append(dialog);
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog || event.target.closest("[data-preview-close]")) dialog.close();
+      const thumb = event.target.closest("[data-preview-thumb]");
+      if (thumb) {
+        dialog.querySelector(".item-preview__main").src = thumb.dataset.previewThumb;
+        dialog.querySelectorAll("[data-preview-thumb]").forEach((t) => t.classList.toggle("is-active", t === thumb));
+      }
+    });
+  }
+  dialog.innerHTML = `
+    <button type="button" class="item-preview__close" data-preview-close aria-label="Close">×</button>
+    ${photos.length ? `<img class="item-preview__main" src="${escapeHtml(photos[0])}" alt="${escapeHtml(title)}">` : `<div class="item-preview__main item-preview__main--empty" aria-hidden="true">♥</div>`}
+    ${photos.length > 1 ? `<div class="item-preview__thumbs">${photos.map((src, i) => `<button type="button" class="${i ? "" : "is-active"}" data-preview-thumb="${escapeHtml(src)}" aria-label="Photo ${i + 1}"><img src="${escapeHtml(src)}" alt=""></button>`).join("")}</div>` : ""}
+    <div class="item-preview__body">
+      <h3>${letter ? `<span class="winner-card__letter">${letter}</span>` : ""}${escapeHtml(title)}</h3>
+      <span class="winner-card__by">${avatar(by, byEmail)}${escapeHtml(by)}${city ? ` · ${escapeHtml(city)}` : ""}</span>
+      ${lot?.description ? `<p>${escapeHtml(lot.description)}</p>` : ""}
+    </div>`;
+  dialog.showModal();
+}
+
+document.addEventListener("keydown", (event) => {
+  const top = event.target.closest?.("[data-preview]");
+  if (top && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openPreview(top.dataset.preview); }
+});
 document.addEventListener("click", (event) => {
+  const preview = event.target.closest("[data-preview]");
+  if (preview) return openPreview(preview.dataset.preview);
   const toggle = event.target.closest("[data-donate]")?.dataset.donate;
   if (toggle) {
     openPanel = openPanel === toggle ? "" : toggle;
