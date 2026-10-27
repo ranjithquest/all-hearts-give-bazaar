@@ -357,25 +357,31 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
       ${mine && !full ? `<button type="button" class="${state.partial ? "donate-submit donate-more" : "donate-link"}" data-replace="${escapeHtml(key)}">Upload more screenshots</button>` : ""}
     </div>`;
   }
-  const saved = state.record ? proofList(record).length : 0;
+  const savedProofs = state.record ? proofList(record) : [];
+  const saved = savedProofs.length;
+  const savedAmounts = state.record && Array.isArray(record.amounts) && !record.legacy ? record.amounts : [];
   const savedTotal = state.record ? proofTotal(record) : 0;
   const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>${c.cta || "Donate"} ↗</i></a>`).join("");
   return `<div class="donate-step">
-      <h4><b>1</b>Donate ${saved && savedTotal != null ? `the remaining ${formatBidRupees(Math.max(0, amount - savedTotal))}` : formatBidRupees(amount)} on Benevity</h4>
+      <h4><b>1</b>Donate ${saved && savedTotal != null ? (amount - savedTotal > 0 ? `the remaining ${formatBidRupees(amount - savedTotal)} ` : "") : `${formatBidRupees(amount)} `}on Benevity</h4>
       <p>Give it all to one NGO or split it across a few. Microsoft matches your donation.</p>
       <div class="donate-causes">${causes}</div>
     </div>
     <div class="donate-step">
       <h4><b>2</b>Upload your payment screenshots</h4>
-      ${saved ? `<p class="donate-saved">Already uploaded: ${saved} screenshot${saved > 1 ? "s" : ""}${savedTotal != null ? ` · ${formatBidRupees(savedTotal)}` : ""}. <button type="button" class="donate-link" data-donate-cancel>Cancel</button></p>` : ""}
+      ${saved ? `<ul class="donate-thumbs donate-thumbs--saved">${savedProofs.map((proof, i) => {
+        const url = lotImageUrl(proof);
+        return `<li>${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}"></a>` : ""}<span>Screenshot ${i + 1}<em class="donate-thumbs__note">Uploaded earlier</em></span>${savedAmounts[i] != null ? `<b class="donate-thumbs__amount">${formatBidRupees(savedAmounts[i])}</b>` : ""}<button type="button" class="donate-upload__clear" data-proof-delete="${i}" data-key="${escapeHtml(key)}" aria-label="Remove screenshot ${i + 1}">×</button></li>`;
+      }).join("")}</ul>` : ""}
       <ul class="donate-thumbs" data-proof-thumbs hidden></ul>
-      <p class="donate-tally" data-proof-tally hidden></p>
+      ${saved && savedTotal != null ? `<p class="donate-tally ${savedTotal >= amount ? "is-ok" : "is-partial"}" data-proof-tally>${savedTotal >= amount ? "✓ " : ""}Total ${formatBidRupees(savedTotal)} of ${formatBidRupees(amount)}</p>` : `<p class="donate-tally" data-proof-tally hidden></p>`}
       <label class="donate-upload">
         <input type="file" accept="image/*" multiple data-proof-input>
         <span data-proof-label>${PROOF_LABEL_EMPTY}</span>
       </label>
       <button type="button" class="donate-submit" data-proof-submit="${escapeHtml(key)}" data-bid="${Number(amount) || 0}" data-saved="${savedTotal || 0}" data-saved-count="${saved}" data-legacy="${saved && savedTotal == null ? 1 : 0}" disabled>Submit donation proof</button>
       <p class="donate-error" data-proof-error role="alert" hidden></p>
+      ${saved ? `<p class="donate-cancel"><button type="button" class="donate-link" data-donate-cancel>Cancel</button></p>` : ""}
     </div>
     <div class="donate-step donate-step--next">
       <h4><b>3</b>Get your gift</h4>
@@ -478,7 +484,7 @@ async function deleteSavedProof(key, index, button) {
   const amount = Array.isArray(old.amounts) && !old.legacy ? old.amounts[index] : null;
   const last = proofs.length === 1;
   if (!confirm(`Remove screenshot ${index + 1}${amount != null ? ` (${formatBidRupees(amount)})` : ""}?${last ? " This was the only one, so the donation will be marked as not done." : ""}`)) return;
-  const error = button.closest(".donate-done")?.querySelector("[data-proof-error]");
+  const error = button.closest(".donate-done, .donate-step")?.querySelector("[data-proof-error]");
   if (!vibeStorage?.shared || vibeStorage.isPublicShare) {
     if (error) { error.textContent = "Please open the site signed in to VibeHub to make changes."; error.hidden = false; }
     return;
@@ -764,8 +770,7 @@ function updateProofTally(scope) {
   const items = scope.proofItems || [];
   const check = proofCheck(scope);
   const tally = scope.querySelector("[data-proof-tally]");
-  tally.hidden = !items.length;
-  tally.hidden = !items.length || check.legacy;
+  tally.hidden = (!items.length && !Number(scope.querySelector("[data-proof-submit]")?.dataset.savedCount)) || check.legacy;
   tally.className = `donate-tally ${check.partial ? "is-partial" : check.ready ? "is-ok" : ""}`;
   tally.innerHTML = `${check.ready && !check.partial ? "✓ " : ""}Total ${formatBidRupees(check.total)} of ${formatBidRupees(check.bid)}${check.message ? `<small>${escapeHtml(check.message)}</small>` : ""}`;
   const submit = scope.querySelector("[data-proof-submit]");

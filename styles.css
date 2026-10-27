@@ -4205,3 +4205,8 @@ img.is-img-broken {
 .auction-dialog.is-slide-preview .auction-preview-nav a { text-decoration: none; }
 @media (max-width: 760px) { .auction-byline__avatars .person-avatar { flex-basis: 28px; width: 28px; height: 28px; font-size: 10px; } }
 .auction-visual:has(.auction-gallery--carousel) .raised-sticker--preview { bottom: 46px; }
+.winner-card__bids .donate-done .donate-tally { text-align: center; }
+.winner-card__bids .donate-thumbs--saved li { background: #f6faf7; border-color: #cfe6d7; }
+.donate-thumbs--saved a { display: flex; flex: none; }
+.winner-card__bids .donate-cancel { margin: 10px 0 0; text-align: center; }
+.donate-cancel .donate-link { margin: 0 auto; }
