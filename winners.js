@@ -593,7 +593,13 @@ function openPreview(title) {
   $("auctionLotNumber").textContent = letter ? `#${letter}` : "";
   $("auctionKicker").textContent = letter ? `ITEM ${letter}` : "UP FOR AUCTION";
   $("auctionTitle").textContent = title;
-  $("auctionContributor").textContent = lot?.contributor || bid?.[1] || "";
+  const contributor = lot?.contributor || bid?.[1] || "";
+  $("auctionContributor").textContent = contributor;
+  const team = String(lot?.team || "").split(/[,|]/).map((m) => m.trim()).filter(Boolean);
+  const people = team.length
+    ? team.map((m) => { const email = m.includes("@") ? m.toLowerCase() : `${m.toLowerCase()}@microsoft.com`; const name = STUDIO_ROSTER.find(([, a]) => `${a}@microsoft.com` === email)?.[0] || m; return [name, email]; })
+    : [[contributor, emailFor(contributor) || (lot?.avatarEmail || lot?.email || "").toLowerCase()]];
+  $("auctionContributorAvatars").innerHTML = contributor ? people.slice(0, 4).map(([n, e]) => avatar(n, e)).join("") : "";
   $("auctionDescription").textContent = lot?.description || "";
   $("auctionLocation").textContent = city;
   $("auctionQuantity").textContent = lot?.quantity || winners.length || 1;
@@ -657,6 +663,7 @@ function fitPreviewPhoto() {
 window.addEventListener("resize", () => { if (document.querySelector("#auctionDialog")?.open) fitPreviewPhoto(); });
 document.querySelector("#auctionDialog")?.addEventListener("click", (event) => {
   const dialog = event.currentTarget;
+  if (event.target.closest('.auction-preview-nav a[aria-current="page"]')) { event.preventDefault(); return dialog.close(); }
   if (event.target === dialog || event.target.closest("[data-close-auction]")) return dialog.close();
   const arrow = event.target.closest("[data-gallery-step]");
   if (arrow) {

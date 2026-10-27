@@ -1404,6 +1404,10 @@ function renderAuctionItem() {
   elements.auctionLotNumber.textContent = `#${lotNumber}`;
   elements.auctionTitle.textContent = item.title;
   elements.auctionContributor.textContent = contributorDisplay(item);
+  const team = String(item.team || "").split(/[,|]/).map((m) => m.trim()).filter(Boolean);
+  const people = team.length ? team.map((m) => [rosterName(m), m.includes("@") ? m.toLowerCase() : memberEmail(m)]) : [[contributorDisplay(item), String(item.avatarEmail || item.email || "").toLowerCase()]];
+  const avatars = document.querySelector("#auctionContributorAvatars");
+  if (avatars) avatars.innerHTML = people.slice(0, 4).map(([name, email]) => `<span class="person-avatar" aria-hidden="true">${escapeHtml(initials(name))}${email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" onerror="this.remove()">` : ""}</span>`).join("");
   elements.auctionDescription.textContent = item.description;
   elements.auctionLocation.textContent = item.city === "Remote" ? "Anywhere / remote" : cityLabel(item.city);
   elements.auctionQuantity.textContent = item.quantity;
@@ -1624,6 +1628,10 @@ document.querySelectorAll("[data-open-auction], [data-launch-auction]").forEach(
   button.addEventListener("click", () => openAuctionMode());
 });
 
+document.querySelector('.auction-preview-nav a[aria-current="page"]')?.addEventListener("click", (event) => {
+  event.preventDefault();
+  closeAuctionMode();
+});
 document.querySelectorAll("[data-close-auction]").forEach((button) => {
   button.addEventListener("click", closeAuctionMode);
 });

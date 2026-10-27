@@ -4193,3 +4193,14 @@ img.is-img-broken {
 }
 .raised-sticker--preview small { font-size: .55em; letter-spacing: 0; text-transform: none; }
 @media (max-width: 760px) { .raised-sticker--preview { left: 12px; bottom: 12px; border-width: 2px; box-shadow: 3px 3px 0 #3d3d3d; } }
+/* Preview: contributor avatar in the byline, page nav in the header */
+.auction-byline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.auction-byline__avatars { display: inline-flex; }
+.auction-byline__avatars:empty { display: none; }
+.auction-byline__avatars .person-avatar { flex-basis: 34px; width: 34px; height: 34px; font-size: 12px; border: 2px solid #f5debc; }
+.auction-byline__avatars .person-avatar + .person-avatar { margin-left: -10px; }
+.auction-preview-nav { display: none; }
+.auction-dialog.is-slide-preview .auction-preview-brand { text-decoration: none; }
+.auction-dialog.is-slide-preview .auction-preview-nav { display: flex; }
+.auction-dialog.is-slide-preview .auction-preview-nav a { text-decoration: none; }
+@media (max-width: 760px) { .auction-byline__avatars .person-avatar { flex-basis: 28px; width: 28px; height: 28px; font-size: 10px; } }
