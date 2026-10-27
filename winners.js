@@ -167,7 +167,8 @@ const MAX_SAVED_PROOFS = 10;
 // Records from before amounts were tracked count as fully donated; newer ones only once the screenshots add up to the bid.
 function donationState(key) {
   const record = donations.get(key);
-  if (!record || !proofList(record).length) return { record: null, done: false, partial: false, total: 0, bid: 0 };
+  if (!record) return { record: null, done: false, partial: false, total: 0, bid: 0 };
+  if (!proofList(record).length) return { record, done: true, partial: false, total: 0, bid: Number(record.amount) || 0 };
   const bid = Number(record.amount ?? findBid(key)?.amount) || 0;
   const total = proofTotal(record);
   const done = total == null || total >= bid;
