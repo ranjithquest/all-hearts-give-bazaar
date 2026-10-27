@@ -62,6 +62,7 @@ async function loadBoardLots() {
     });
     renderWinners();
     renderWinnerWall();
+    renderContributorFaces();
   } catch (error) {
     console.warn("Could not load board items for winner photos.", error);
   }
@@ -129,7 +130,17 @@ function initials(name = "") {
   return String(name).split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "♥";
 }
 
-const EXTRA_EMAILS = { "ankur jhawar": "ankur.jhawar@microsoft.com" };
+const EXTRA_EMAILS = {
+  "ankur jhawar": "ankur.jhawar@microsoft.com",
+  "deepak menon": "deepak.menon@microsoft.com",
+  "shveta verma": "shveta.verma@microsoft.com",
+  "mohak gulati": "mohakgulati@microsoft.com",
+  "prakash arjunan": "prakash.arjunan@microsoft.com",
+  "srishty banga": "srishtybanga@microsoft.com",
+  "anandhi hariharan": "anandhi.hariharan@microsoft.com",
+  "anudish": "akoshal@microsoft.com",
+  "ninad": "ninadkale@microsoft.com",
+};
 
 function emailFor(name) {
   const key = String(name).trim().toLowerCase();
@@ -216,9 +227,36 @@ function renderWinnerWall() {
   document.querySelector("#winnerWallCount").textContent = `${names.length} bid winners · tap a face to see their win`;
 }
 
+function renderContributorFaces() {
+  const list = document.querySelector("#contributorFaces");
+  if (!list) return;
+  const seen = new Set();
+  const people = [];
+  buildEntries().forEach(({ lot, bid }) => {
+    const name = String(lot?.contributor || bid?.[1] || "").split(/,|&| and /)[0].trim();
+    const parts = name.toLowerCase().split(/\s+/);
+    const key = `${parts[0].slice(0, 5)} ${parts.slice(1).join(" ")}`;
+    const email = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(name);
+    const handle = name.includes("@") || (!name.includes(" ") && name.includes("."));
+    if (!name || seen.has(key) || (email && seen.has(email))) return;
+    seen.add(key);
+    if (email) seen.add(email);
+    const shown = handle ? name.split("@")[0].split(".").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ") : name;
+    people.push({ name: shown, email, letter: lotLetter(lot?.title || bid?.[0]) });
+  });
+  list.innerHTML = people.map(({ name, email, letter }, i) => {
+    const angle = (-90 + (i + 0.5) * (360 / people.length)) * Math.PI / 180;
+    const x = (50 + 45 * Math.cos(angle)).toFixed(1);
+    const y = (50 + 43 * Math.sin(angle)).toFixed(1);
+    const r = (i % 2 ? 1 : -1) * (3 + (i % 3) * 2);
+    return `<li style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" title="${escapeHtml(name)}${letter ? ` · Item ${letter}` : ""}">${avatar(name, email)}<span>${escapeHtml(name.split(" ")[0])}</span></li>`;
+  }).join("");
+}
+
 renderCauses();
 renderWinners();
 renderWinnerWall();
+renderContributorFaces();
 document.querySelector("#winnerSearch")?.addEventListener("input", (event) => renderWinners(event.target.value));
 document.querySelector("#winnerWall")?.addEventListener("click", (event) => {
   const name = event.target.closest("button[data-name]")?.dataset.name;
