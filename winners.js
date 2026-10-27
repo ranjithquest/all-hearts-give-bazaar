@@ -586,8 +586,8 @@ function renderHero() {
       const total = bids.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
       const items = bids.map((b) => b.letter ? `#${b.letter}` : "").filter(Boolean).join(", ");
       const causes = personCauses(keys);
-      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong>${causes.length ? `<small class="face-card__cause">Supported <em>${escapeHtml(listJoin(causes))}</em></small>` : `<small>${bids.length} item${bids.length === 1 ? "" : "s"} won${items ? ` · ${items}` : ""}</small>`}</div>`;
-      return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${causes.length ? `supported ${escapeHtml(listJoin(causes))}` : `${bids.length} item${bids.length === 1 ? "" : "s"} won`}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
+      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong>${causes.length ? `<small class="face-card__cause">Gives <em>${escapeHtml(listJoin(causes))}</em></small>` : `<small>${bids.length} item${bids.length === 1 ? "" : "s"} won${items ? ` · ${items}` : ""}</small>`}</div>`;
+      return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${causes.length ? `gives to ${escapeHtml(listJoin(causes))}` : `${bids.length} item${bids.length === 1 ? "" : "s"} won`}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
     }).join("");
   }
   const counter = document.querySelector("#donatedCount");
@@ -831,7 +831,10 @@ loadBoardLots();
 const faceConfetti = (() => {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return () => {};
   let gl, canvas, prog, buf, parts = [], raf = 0, last = 0;
-  const COLORS = [[0.96, 0.52, 0.62], [0.99, 0.76, 0.48], [0.58, 0.72, 0.95], [0.55, 0.82, 0.68], [0.78, 0.62, 0.93], [0.98, 0.64, 0.56]];
+  // GIVE brand heart palette
+  const BRAND = [[0.94, 0.35, 0.29], [0.97, 0.63, 0.69], [0.56, 0.36, 0.84], [0.79, 0.71, 0.93], [0.18, 0.44, 0.84], [0.24, 0.76, 0.66], [1, 0.72, 0.11], [0.77, 0.25, 0.72], [0.98, 0.55, 0.36]];
+  const pick = () => BRAND[(Math.random() * BRAND.length) | 0];
+  const STRIDE = 19;
   function init() {
     canvas = document.createElement("canvas");
     canvas.className = "face-confetti";
@@ -841,12 +844,18 @@ const faceConfetti = (() => {
     if (!gl) return false;
     const sh = (type, src) => { const x = gl.createShader(type); gl.shaderSource(x, src); gl.compileShader(x); return x; };
     prog = gl.createProgram();
-    gl.attachShader(prog, sh(gl.VERTEX_SHADER, `attribute vec2 p;attribute vec4 a;attribute vec4 c;uniform vec2 v;varying vec4 va;varying vec4 vc;
-      void main(){gl_Position=vec4(p/v*2.0-1.0,0,1);gl_Position.y*=-1.0;gl_PointSize=a.x;va=a;vc=c;}`));
-    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float;varying vec4 va;varying vec4 vc;
-      void main(){vec2 q=gl_PointCoord-.5;float s=sin(va.y),k=cos(va.y);q=vec2(k*q.x-s*q.y,s*q.x+k*q.y);if(va.w>1.5){vec2 r=abs(q)*2.;float d=pow(r.x,.5)+pow(r.y,.5);if(d>1.)discard;}
-        else if(va.w>.5){q.x/=max(abs(cos(va.z*.5)),.55);vec2 h=q*2.2;h.y=-h.y+.25;float d=pow(h.x*h.x+h.y*h.y-.25,3.)-h.x*h.x*h.y*h.y*h.y;if(d>0.)discard;}
-        else{q.x/=max(abs(cos(va.z)),.15);if(abs(q.x)>.22||abs(q.y)>.42)discard;}gl_FragColor=vec4(vc.rgb,vc.a);}`));
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, `attribute vec2 p;attribute vec4 a;attribute vec4 c;attribute vec3 c1;attribute vec3 c2;attribute vec3 c3;uniform vec2 v;
+      varying vec4 va;varying vec4 vc;varying vec3 v1;varying vec3 v2;varying vec3 v3;
+      void main(){gl_Position=vec4(p/v*2.0-1.0,0,1);gl_Position.y*=-1.0;gl_PointSize=a.x;va=a;vc=c;v1=c1;v2=c2;v3=c3;}`));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float;varying vec4 va;varying vec4 vc;varying vec3 v1;varying vec3 v2;varying vec3 v3;
+      void main(){vec2 q=gl_PointCoord-.5;float s=sin(va.y),k=cos(va.y);q=vec2(k*q.x-s*q.y,s*q.x+k*q.y);vec3 col=vc.rgb;
+        if(va.w>1.5){vec2 r=abs(q)*2.;if(pow(r.x,.5)+pow(r.y,.5)>1.)discard;}
+        else if(va.w>.5){float f=cos(va.z);q.x/=max(abs(f),.6);vec2 h=q*2.3;h.y=-h.y+.3;
+          if(pow(h.x*h.x+h.y*h.y-.25,3.)-h.x*h.x*h.y*h.y*h.y>0.)discard;
+          bool l=(f<0.)?(q.x>0.):(q.x<0.);bool t=h.y>.12+.25*h.x;
+          col=l?(t?vc.rgb:v2):(t?v1:v3);col*=.9+.1*smoothstep(-.4,.4,q.y);}
+        else{if(length(q)>.5)discard;}
+        gl_FragColor=vec4(col,vc.a);}`));
     gl.linkProgram(prog);
     gl.useProgram(prog);
     buf = gl.createBuffer();
@@ -861,17 +870,23 @@ const faceConfetti = (() => {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    parts = parts.filter((q) => (q.life -= dt) > 0 && q.y < h + 40);
-    const data = new Float32Array(parts.length * 10);
+    parts = parts.filter((q) => (q.life -= dt) > 0);
+    const data = new Float32Array(parts.length * STRIDE);
     parts.forEach((q, i) => {
-      q.age += dt; q.vx *= 0.97; q.vy = q.heart === 1 ? q.vy * 0.99 - 8 * dt : q.heart === 2 ? q.vy * 0.95 : q.vy * 0.97 + 45 * dt; q.x += q.vx * dt + Math.sin(q.age * q.sway + q.phase) * 0.5; q.y += q.vy * dt; q.rot += q.vr * dt; q.spin += q.vs * dt;
-      const alpha = Math.min(1, q.age * 3, q.life / 0.9) * 0.95;
-      data.set([q.x * dpr, q.y * dpr, q.size * dpr * (q.heart === 2 ? Math.max(0, Math.sin(q.age * 3.2 + q.phase)) : Math.min(1, 0.4 + q.age * 2)), q.rot, q.spin, q.heart, ...q.color, alpha], i * 10);
+      q.age += dt;
+      if (q.age < 0) return;
+      const drag = Math.exp(-q.drag * dt);
+      q.vx *= drag; q.vy = q.vy * drag + q.g * dt;
+      q.x += q.vx * dt + Math.sin(q.age * 2.4 + q.phase) * q.wob * dt; q.y += q.vy * dt; q.rot += q.vr * dt * drag; q.spin += q.vs * dt;
+      const pop = q.age < 0.18 ? 1 - Math.pow(1 - q.age / 0.18, 3) * (1 - 0.3) : 1;
+      const twinkle = q.type === 2 ? Math.max(0, Math.sin(q.age * 7 + q.phase)) : 1;
+      const alpha = Math.min(1, q.life / 0.4);
+      data.set([q.x * dpr, q.y * dpr, q.size * dpr * pop * twinkle, q.rot, q.spin, q.type, ...q.cols[0], alpha, ...q.cols[1], ...q.cols[2], ...q.cols[3]], i * STRIDE);
     });
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
-    const attr = (name, size, off) => { const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 40, off * 4); };
-    attr("p", 2, 0); attr("a", 4, 2); attr("c", 4, 6);
+    const attr = (name, size, off) => { const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, STRIDE * 4, off * 4); };
+    attr("p", 2, 0); attr("a", 4, 2); attr("c", 4, 6); attr("c1", 3, 10); attr("c2", 3, 13); attr("c3", 3, 16);
     gl.uniform2f(gl.getUniformLocation(prog, "v"), canvas.width, canvas.height);
     gl.drawArrays(gl.POINTS, 0, parts.length);
     raf = parts.length ? requestAnimationFrame(frame) : 0;
@@ -880,10 +895,22 @@ const faceConfetti = (() => {
   return (rect) => {
     if (!gl && !init()) return;
     const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-    const add = (o) => parts.push({ rot: Math.random() * 6.3, spin: Math.random() * 6.3, color: COLORS[(Math.random() * COLORS.length) | 0], phase: Math.random() * 6.3, sway: 1.2 + Math.random() * 1.2, age: -Math.random() * 0.6, ...o });
-    for (let i = 0; i < 14; i++) add({ heart: 1, x: cx + (Math.random() - 0.5) * rect.width * 0.9, y: rect.top + Math.random() * 20, vx: (Math.random() - 0.5) * 30, vy: -(55 + Math.random() * 60), vr: (Math.random() - 0.5) * 0.8, vs: 0.6, size: 30 + Math.random() * 18, life: 3 + Math.random() * 1.2 });
-    for (let i = 0; i < 12; i++) add({ heart: 2, x: rect.left - 20 + Math.random() * (rect.width + 40), y: rect.top - 30 + Math.random() * (rect.height + 50), vx: 0, vy: -10, vr: 0, vs: 0, size: 16 + Math.random() * 12, color: [0.98, 0.78, 0.36], life: 1.8 + Math.random() * 1.2 });
-    for (let i = 0; i < 14; i++) add({ heart: 0, x: cx + (Math.random() - 0.5) * rect.width * 1.2, y: rect.top - 10, vx: (Math.random() - 0.5) * 80, vy: -(60 + Math.random() * 80), vr: (Math.random() - 0.5) * 1.6, vs: 1 + Math.random() * 2, size: 9 + Math.random() * 6, life: 2.6 + Math.random() * 1 });
+    const add = (o) => parts.push({ rot: 0, spin: Math.random() * 6.3, phase: Math.random() * 6.3, age: 0, wob: 0, vr: 0, vs: 0, ...o });
+    // Hearts pop out from behind the card, then float up like the GIVE floating-hearts motion
+    for (let i = 0; i < 16; i++) {
+      const ang = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.5, sp = 380 + Math.random() * 320;
+      const c = pick(); let cols = [c, pick(), pick(), pick()];
+      add({ type: 1, x: cx + (Math.random() - 0.5) * rect.width * 0.5, y: cy, vx: Math.cos(ang) * sp * 1.3, vy: Math.sin(ang) * sp, drag: 4.2, g: -70, wob: 18,
+        rot: (Math.random() - 0.5) * 0.9, vr: (Math.random() - 0.5) * 3, vs: 0.8 + Math.random() * 1.2, size: 38 + Math.random() * 30, cols, age: -Math.random() * 0.08, life: 1.5 + Math.random() * 0.6 });
+    }
+    for (let i = 0; i < 22; i++) {
+      const ang = Math.random() * Math.PI * 2, sp = 300 + Math.random() * 380, c = pick();
+      add({ type: 0, x: cx, y: cy, vx: Math.cos(ang) * sp * 1.4, vy: Math.sin(ang) * sp - 80, drag: 4.5, g: 160, size: 6 + Math.random() * 6, cols: [c, c, c, c], life: 1.1 + Math.random() * 0.5 });
+    }
+    for (let i = 0; i < 8; i++) {
+      const gold = [1, 0.8, 0.3];
+      add({ type: 2, x: rect.left - 16 + Math.random() * (rect.width + 32), y: rect.top - 24 + Math.random() * (rect.height + 40), vx: 0, vy: -20, drag: 1, g: 0, size: 14 + Math.random() * 10, cols: [gold, gold, gold, gold], age: -Math.random() * 0.25, life: 1 + Math.random() * 0.5 });
+    }
     if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); }
   };
 })();

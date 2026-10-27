@@ -4293,3 +4293,9 @@ a.donate-proof:hover .donate-proof__label { color: #145c33; }
 
 .face-card__cause em { display: block; margin-top: 2px; color: #c8102e; font-style: normal; font-weight: 800; font-size: 15px; }
 .raised-stage__amount { filter: url(#amount-grain); }
+
+/* Bid winners list: raised sticker sits below the photo, not over it */
+.winner-card__visual { padding-bottom: 0; }
+.winner-card__visual .raised-sticker:not(.raised-sticker--preview) { position: relative; left: auto; bottom: auto; width: fit-content; margin: 8px auto 0; transform: rotate(-3deg); }
+/* Plain white hover card */
+.raised-stage__faces .face-card { background: #fff; }
