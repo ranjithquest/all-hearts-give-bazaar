@@ -4288,3 +4288,5 @@ a.donate-proof:hover .donate-proof__label { color: #145c33; }
 .face-card small { color: #6b5e4e; white-space: normal; text-wrap: balance; overflow-wrap: anywhere; }
 .face-card__status { background: #f5e3c6; color: #7a5a2e; }
 .face-card__status.is-done { background: #2f9e5b; color: #fff; }
+
+.face-card__art { width: 54px; height: auto; top: -28px; left: -24px; rotate: -12deg; object-fit: contain; }

@@ -546,7 +546,7 @@ function ringSpots(count, rect) {
 let heroResizeTimer;
 window.addEventListener("resize", () => { clearTimeout(heroResizeTimer); heroResizeTimer = setTimeout(renderHero, 200); });
 
-const FACE_CARD_ART = `<svg class="face-card__art" viewBox="0 0 64 64" aria-hidden="true"><path d="M10 56 24 18l22 22z" fill="#f7ca45" stroke="#3d3d3d" stroke-width="3" stroke-linejoin="round"/><path d="m16 40 9 9M20 29l15 15" stroke="#e8173b" stroke-width="4" stroke-linecap="round"/><path d="M33 16c2-6 8-8 12-5M44 26c6-4 12-2 14 2M38 8l2-5M52 14l5-3M56 34l5 1" fill="none" stroke="#3d3d3d" stroke-width="3" stroke-linecap="round"/><circle cx="30" cy="6" r="3" fill="#5b91e1"/><circle cx="58" cy="22" r="3" fill="#2f9e5b"/><path d="M47 40c0-3 4-4 5-1 1-3 5-2 5 1 0 3-5 6-5 6s-5-3-5-6z" fill="#e8173b"/></svg>`;
+const FACE_CARD_ART = `<img class="face-card__art" src="heart-sparkle.png" alt="" aria-hidden="true">`;
 
 function renderHero() {
   const people = winnerPeople();
