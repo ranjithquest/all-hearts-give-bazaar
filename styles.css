@@ -4108,3 +4108,20 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 
 .donate-caret { margin-left: 6px; font-style: normal; font-size: 12px; }
 
+
+/* Image loading and failed states (toggled by img-loading.js) */
+img.is-img-loading,
+img.is-img-broken {
+  color: transparent;
+  background-color: #efe4cc;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: clamp(18px, 22%, 40px) auto;
+}
+img.is-img-loading {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='16' fill='none' stroke='%23cf043b' stroke-opacity='.18' stroke-width='4'/%3E%3Cpath d='M20 4a16 16 0 0 1 16 16' fill='none' stroke='%23cf043b' stroke-width='4' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 20 20' to='360 20 20' dur='.8s' repeatCount='indefinite'/%3E%3C/path%3E%3C/svg%3E");
+}
+img.is-img-broken {
+  object-fit: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none' stroke='%239a8b78' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='8' width='30' height='24' rx='3'/%3E%3Ccircle cx='14' cy='16' r='3'/%3E%3Cpath d='M35 27l-9-9-15 14'/%3E%3C/svg%3E");
+}

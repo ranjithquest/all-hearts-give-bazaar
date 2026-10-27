@@ -1465,6 +1465,7 @@ function fitAuctionVisualToPhoto() {
   }
   const img = gallery.querySelectorAll(".auction-gallery__track img")[Number(gallery.dataset.index || 0)];
   if (!img) return;
+  if (img.classList.contains("is-img-broken")) return resetFrame();
   if (!img.complete || !img.naturalWidth) {
     img.addEventListener("load", fitAuctionVisualToPhoto, { once: true });
     return;

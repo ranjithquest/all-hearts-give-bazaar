@@ -500,7 +500,7 @@ function fitPreviewPhoto() {
   visual.style.height = "";
   if (!gallery) return;
   const img = gallery.querySelectorAll(".auction-gallery__track img")[Number(gallery.dataset.index || 0)];
-  if (!img) return;
+  if (!img || img.classList.contains("is-img-broken")) return;
   if (!img.complete || !img.naturalWidth) return img.addEventListener("load", fitPreviewPhoto, { once: true });
   if (!visual.getBoundingClientRect().width) return;
   const ratio = img.naturalWidth / img.naturalHeight;
