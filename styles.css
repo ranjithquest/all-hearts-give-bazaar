@@ -4051,3 +4051,7 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
   .raised-stage__faces { left: -22%; right: -22%; }
   .raised-stage__faces .person-avatar { width: clamp(46px, 4.4vw, 62px); height: clamp(46px, 4.4vw, 62px); }
 }
+.winners-head { justify-content: center; }
+.winners-search input { width: min(420px, 100%); }
+.winners-search { width: min(420px, 100%); }
+.winners-search input { width: 100%; }
