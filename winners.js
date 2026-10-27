@@ -61,6 +61,7 @@ async function loadBoardLots() {
       if (!boardLots.some((lot) => lotLetter(lot.title) === lotLetter(extra.title))) boardLots.push(extra);
     });
     renderWinners();
+    renderWinnerWall();
   } catch (error) {
     console.warn("Could not load board items for winner photos.", error);
   }
@@ -207,7 +208,24 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
   document.querySelector("#winnersEmpty").hidden = rows.length > 0;
 }
 
+function renderWinnerWall() {
+  const wall = document.querySelector("#winnerWall");
+  if (!wall) return;
+  const names = [...new Map(WINNING_BIDS.flatMap((bid) => bid[3] || []).map(([name]) => [name.trim().toLowerCase(), name.trim()])).values()];
+  wall.innerHTML = names.map((name) => `<li><button type="button" data-name="${escapeHtml(name)}" title="${escapeHtml(name)}" aria-label="Show ${escapeHtml(name)}’s wins">${avatar(name)}</button></li>`).join("");
+  document.querySelector("#winnerWallCount").textContent = `${names.length} bid winners · tap a face to see their win`;
+}
+
 renderCauses();
 renderWinners();
+renderWinnerWall();
 document.querySelector("#winnerSearch")?.addEventListener("input", (event) => renderWinners(event.target.value));
+document.querySelector("#winnerWall")?.addEventListener("click", (event) => {
+  const name = event.target.closest("button[data-name]")?.dataset.name;
+  const search = document.querySelector("#winnerSearch");
+  if (!name || !search) return;
+  search.value = name;
+  renderWinners(name);
+  document.querySelector("#winnersList")?.closest(".results-block, section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 loadBoardLots();

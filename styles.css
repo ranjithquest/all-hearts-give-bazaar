@@ -3778,7 +3778,8 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
   -webkit-box-orient: vertical;
 }
 .winner-card__total { margin: 0; color: var(--ink-soft); font-size: 12px; font-weight: 800; text-align: right; text-transform: uppercase; letter-spacing: .04em; }
-.site-nav { display: flex; gap: 6px; margin-left: auto; }
+.site-nav { display: flex; gap: 6px; margin-left: 32px; }
+@media (max-width: 760px) { .site-nav { margin-left: 14px; } }
 .site-nav a {
   padding: 8px 14px;
   color: var(--ink);
@@ -3838,3 +3839,40 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .winner-card__bids li > span { display: flex; align-items: center; gap: 9px; }
 .winner-card__label { margin: 0; color: var(--ink-soft); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .winner-card__none { margin: 0; padding: 8px 10px; color: var(--ink-soft); font-size: 13px; background: rgba(245, 222, 188, .35); border-radius: 8px; text-align: center; }
+.winner-wall { margin: 4px auto 18px; }
+.winner-wall ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0;
+  padding: 0 0 0 10px;
+  list-style: none;
+}
+.winner-wall li { margin-left: -10px; margin-bottom: 6px; }
+.winner-wall button {
+  display: block;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.winner-wall button:hover,
+.winner-wall button:focus-visible { position: relative; z-index: 2; transform: translateY(-4px) scale(1.12); }
+.winner-wall .person-avatar {
+  width: 46px;
+  height: 46px;
+  font-size: 14px;
+  border: 3px solid #fffaf0;
+  box-shadow: 0 3px 8px rgba(61, 61, 61, .16);
+}
+.winner-wall p {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+@media (max-width: 760px) { .winner-wall .person-avatar { width: 38px; height: 38px; font-size: 12px; } }
