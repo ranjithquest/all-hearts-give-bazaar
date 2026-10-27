@@ -4204,3 +4204,4 @@ img.is-img-broken {
 .auction-dialog.is-slide-preview .auction-preview-nav { display: flex; }
 .auction-dialog.is-slide-preview .auction-preview-nav a { text-decoration: none; }
 @media (max-width: 760px) { .auction-byline__avatars .person-avatar { flex-basis: 28px; width: 28px; height: 28px; font-size: 10px; } }
+.auction-visual:has(.auction-gallery--carousel) .raised-sticker--preview { bottom: 46px; }
