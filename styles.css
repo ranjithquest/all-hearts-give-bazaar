@@ -3712,9 +3712,10 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
   border-radius: 999px;
 }
 .winners-search input:focus { outline: 3px solid rgba(207, 4, 59, .3); border-color: var(--teal); }
-.winners-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.winners-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 .winner-card {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 18px 20px;
   background: rgba(255, 250, 240, .75);
@@ -3777,7 +3778,7 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.winner-card__total { margin: 0; color: var(--ink-soft); font-size: 12px; font-weight: 800; text-align: right; text-transform: uppercase; letter-spacing: .04em; }
+.winner-card__total { margin: auto 0 0; color: var(--ink-soft); font-size: 12px; font-weight: 800; text-align: right; text-transform: uppercase; letter-spacing: .04em; }
 .site-nav { display: flex; gap: 6px; margin-left: 32px; }
 @media (max-width: 760px) { .site-nav { margin-left: 14px; } }
 .site-nav a {
