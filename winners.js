@@ -332,7 +332,6 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
   const first = name.split(" ")[0];
   const byFirst = String(by).split(/[ ,]/)[0];
   const state = donationState(key);
-  const canEdit = mine;
   if (state.record && !panelReplacing) {
     const proofs = proofList(record).map(lotImageUrl);
     const amounts = Array.isArray(record.amounts) ? record.amounts : [];
@@ -350,7 +349,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     return `<div class="donate-done${state.partial ? " donate-done--partial" : ""}">
       ${head}
       <div class="donate-done__actions">
-        ${proofs.map((url, i) => `<span class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}${amounts[i] != null ? ` · ${formatBidRupees(amounts[i])}` : ""}${url ? "</a>" : "</span>"}${canEdit ? `<button type="button" class="donate-proof__remove" data-proof-delete="${i}" data-key="${escapeHtml(key)}" aria-label="Remove screenshot ${i + 1}">×</button>` : ""}</span>`).join("")}
+        ${proofs.map((url, i) => `<span class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}${amounts[i] != null ? ` · ${formatBidRupees(amounts[i])}` : ""}${url ? "</a>" : "</span>"}</span>`).join("")}
       </div>
       ${tally}
       <p class="donate-error" data-proof-error hidden></p>
@@ -556,7 +555,13 @@ function renderHero() {
       const [x, y] = spots[i];
       const r = (i % 2 ? 1 : -1) * (3 + (i % 3) * 2);
       const done = keys.every(isDonated);
-      return `<li style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" title="${escapeHtml(name)}${done ? " · donated" : ""}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span></li>`;
+      const bids = keys.map(findBid).filter(Boolean);
+      const total = bids.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+      const paid = keys.reduce((sum, k) => { const st = donationState(k); return sum + (st.done ? Number(findBid(k)?.amount) || 0 : st.total); }, 0);
+      const status = done ? `<em class="face-card__status is-done">✓ Donated</em>` : paid > 0 ? `<em class="face-card__status">${formatBidRupees(total - paid)} to go</em>` : `<em class="face-card__status">Donation pending</em>`;
+      const items = bids.map((b) => b.letter ? `#${b.letter}` : "").filter(Boolean).join(", ");
+      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip"><strong>${escapeHtml(name)}</strong><b>${formatBidRupees(total * 2)}</b><small>${formatBidRupees(total)} bid + ${formatBidRupees(total)} Microsoft match</small><small>${bids.length} item${bids.length === 1 ? "" : "s"}${items ? ` · ${items}` : ""}</small>${status}</div>`;
+      return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${formatBidRupees(total * 2)} with Microsoft match${done ? ", donated" : ""}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
     }).join("");
   }
   const counter = document.querySelector("#donatedCount");
