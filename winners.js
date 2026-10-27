@@ -3,7 +3,7 @@ const LOT_LETTER_PATTERNS = [
   ["A", /beaded flower/], ["B", /post ?cards/], ["C", /chapter zero/], ["D", /what still matters/],
   ["E", /debangshu/], ["F", /lifafa/], ["G", /north indian dinner/], ["H", /weekend getaway/],
   ["I", /raceverse/], ["J", /bengaluru book|namma bengaluru/], ["K", /pickleball/], ["L", /drifting/],
-  ["M", /hot wheels (mystery )?box/], ["N", /photo ?shoot/], ["O", /bird photowalk/], ["P", /bowling/],
+  ["M", /hot wheels (mystery )?box/], ["N", /photo ?shoot/], ["O", /bird photowalk/], ["P", /bowling/], ["Z", /^test item/],
 ];
 const lotLetter = (title = "") => LOT_LETTER_PATTERNS.find(([, re]) => re.test(String(title).toLowerCase()))?.[0] || "";
 const EVENT_EXTRA_LOTS = [{
@@ -159,22 +159,14 @@ function viewerEmail() {
 
 const PROOF_LABEL_EMPTY = `<strong><u>Browse file</u> or drag and drop</strong><small>Your Benevity payment screenshot (PNG or JPG)</small>`;
 
-// Temporary: lets the organizer test the donation flow on one winner row.
-const TEST_DONOR = { email: "ranjithravi@microsoft.com", letter: "A" };
-
-const COORDINATORS = ["abhisranjan@microsoft.com", "mgangappa@microsoft.com", "ranjithravi@microsoft.com"];
-
-function isCoordinator() {
-  return COORDINATORS.includes(viewerEmail());
-}
+// Temporary: a private test item to try the donation + Teams notification flow.
+const TEST_VIEWER = "ranjithravi@microsoft.com";
+const TEST_BID = ["Test item (only visible to you)", "Ranjith Ravi", "Anywhere", [["Ranjith Ravi", 100]]];
+const isTestBid = (bid) => bid === TEST_BID;
 
 function isViewer(name, letter) {
   const me = viewerEmail();
   if (!me) return false;
-  if (me === TEST_DONOR.email && letter === TEST_DONOR.letter) {
-    const bid = WINNING_BIDS.find((b) => lotLetter(b[0]) === letter);
-    if (bid?.[3]?.[0]?.[0] === name) return true;
-  }
   const email = emailFor(name);
   if (email) return email === me;
   const alias = me.split("@")[0].replace(/[^a-z]/g, "");
@@ -191,7 +183,8 @@ function buildEntries() {
   const lots = boardLots.filter((lot) => !lot.isExample && lot.status === "approved");
   const bidByLot = new Map();
   const unmatched = [];
-  WINNING_BIDS.forEach((bid) => {
+  const bids = viewerEmail() === TEST_VIEWER ? [...WINNING_BIDS, TEST_BID] : WINNING_BIDS;
+  bids.forEach((bid) => {
     const letter = lotLetter(bid[0]);
     const lot = lots.find((item) => letter && lotLetter(item.title) === letter) || findBoardLot(bid[0], bid[1]);
     if (lot && !bidByLot.has(lot)) bidByLot.set(lot, bid);
@@ -305,9 +298,42 @@ function findBid(key) {
   for (const { lot, bid } of buildEntries()) {
     const letter = lotLetter(lot?.title || bid?.[0]);
     const hit = (bid?.[3] || []).find(([name]) => donationKey(letter, name) === key);
-    if (hit) return { letter, title: lot?.title || bid[0], by: lot?.contributor || bid[1], name: hit[0], amount: hit[1] };
+    if (hit) {
+      const by = lot?.contributor || bid[1];
+      return { letter, title: lot?.title || bid[0], by, byEmail: (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by), name: hit[0], amount: hit[1] };
+    }
   }
   return null;
+}
+
+// Teams channel webhook (Workflows), called through the VibeHub API Connection "teams-notify"
+// so the signature stays server-side. Empty query = notifications off.
+const TEAMS_NOTIFY = { url: "/api/proxy/teams-notify/invoke", query: "" };
+const SITE_URL = "https://vibehub.microsoft.com/app/ranjithravi-kq9qtf/";
+
+function notifyTeams(info, byEmail) {
+  if (!TEAMS_NOTIFY.query) return;
+  const winnerEmail = emailFor(info.name) || viewerEmail();
+  const mention = (name, email) => email ? { type: "mention", text: `<at>${name}</at>`, mentioned: { id: email, name } } : null;
+  const who = (name, email) => email ? `<at>${name}</at>` : name;
+  const item = `${info.letter && info.letter !== "Z" ? `${info.letter} · ` : ""}${info.title}`;
+  const card = {
+    $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+    type: "AdaptiveCard",
+    version: "1.4",
+    body: [
+      { type: "TextBlock", text: "💝 Donation received", weight: "Bolder", size: "Medium" },
+      { type: "TextBlock", wrap: true, text: `${who(info.name, winnerEmail)} has donated **${formatBidRupees(info.amount)}** for **${item}**.` },
+      { type: "TextBlock", wrap: true, text: `${who(info.by, byEmail)}, please reach out to arrange the gift. Thank you both for celebrating the joy of giving!` },
+    ],
+    actions: [{ type: "Action.OpenUrl", title: "Open GIVE Bazaar", url: SITE_URL }],
+    msteams: { width: "Full", entities: [mention(info.name, winnerEmail), mention(info.by, byEmail)].filter((m, i, all) => m && all.findIndex((o) => o?.mentioned.id === m.mentioned.id) === i) },
+  };
+  fetch(`${TEAMS_NOTIFY.url}?${TEAMS_NOTIFY.query}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "message", attachments: [{ contentType: "application/vnd.microsoft.card.adaptive", content: card }] }),
+  }).catch((err) => console.error("Teams notification failed.", err));
 }
 
 async function submitProof(key, scope) {
@@ -330,6 +356,7 @@ async function submitProof(key, scope) {
     await vibeStorage.shared.set(DONATION_KEY_PREFIX + key, record);
     if (old?.proof?.key) vibeStorage.images.delete(old.proof.key).catch(() => {});
     donations.set(key, record);
+    if (!old) notifyTeams(info, info.byEmail);
     panelReplacing = false;
     renderWinners();
     renderHero();
@@ -341,7 +368,7 @@ async function submitProof(key, scope) {
 
 function winnerPeople() {
   const map = new Map();
-  buildEntries().forEach(({ lot, bid }) => {
+  buildEntries().filter(({ bid }) => !isTestBid(bid)).forEach(({ lot, bid }) => {
     const letter = lotLetter(lot?.title || bid?.[0]);
     (bid?.[3] || []).forEach(([name]) => {
       const slug = winnerSlug(name);
@@ -374,7 +401,7 @@ function renderHero() {
   if (!row) return;
   const seen = new Set();
   const contributors = [];
-  buildEntries().forEach(({ lot, bid }) => {
+  buildEntries().filter(({ bid }) => !isTestBid(bid)).forEach(({ lot, bid }) => {
     const raw = String(lot?.contributor || bid?.[1] || "").split(/,|&| and /)[0].trim();
     const parts = raw.toLowerCase().split(/\s+/);
     const key = `${parts[0].slice(0, 5)} ${parts.slice(1).join(" ")}`;
