@@ -159,9 +159,8 @@ function viewerEmail() {
 
 const PROOF_LABEL_EMPTY = `<strong><u>Browse file</u> or drag and drop</strong><small>Your Benevity payment screenshot (PNG or JPG)</small>`;
 
-// Temporary: a private test item to try the donation + Teams notification flow.
-const TEST_VIEWER = "ranjithravi@microsoft.com";
-const TEST_BID = ["Test item (only visible to you)", "Ranjith Ravi", "Anywhere", [["Ranjith Ravi", 100]]];
+// Temporary: a test item, visible only to coordinators, to try the donation flow.
+const TEST_BID = ["Test item (coordinators only)", "Mohan Kumar", "Anywhere", [["Mohan Kumar", 100], ["Abhishek Ranjan", 100]]];
 const isTestBid = (bid) => bid === TEST_BID;
 
 const COORDINATORS = ["abhisranjan@microsoft.com", "mgangappa@microsoft.com", "ranjithravi@microsoft.com"];
@@ -189,7 +188,7 @@ function buildEntries() {
   const lots = boardLots.filter((lot) => !lot.isExample && lot.status === "approved");
   const bidByLot = new Map();
   const unmatched = [];
-  const bids = viewerEmail() === TEST_VIEWER ? [...WINNING_BIDS, TEST_BID] : WINNING_BIDS;
+  const bids = isCoordinator() ? [...WINNING_BIDS, TEST_BID] : WINNING_BIDS;
   bids.forEach((bid) => {
     const letter = lotLetter(bid[0]);
     const lot = lots.find((item) => letter && lotLetter(item.title) === letter) || findBoardLot(bid[0], bid[1]);
