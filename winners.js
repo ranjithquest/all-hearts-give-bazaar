@@ -203,8 +203,15 @@ function readProofAmount(file, bid) {
 }
 // The cause name sits on the "Recipient" row of the Benevity receipt.
 function parseRecipient(text) {
-  const line = String(text).split(/\n/).find((l) => /^\s*Recipient\b/i.test(l));
-  const name = line?.replace(/^\s*Recipient\s*/i, "").replace(/[|_~]+/g, " ").replace(/\s+/g, " ").trim();
+  const lines = String(text).split(/\n/);
+  const at = lines.findIndex((l) => /^\s*Recipient\b/i.test(l));
+  if (at < 0) return null;
+  const parts = [lines[at].replace(/^\s*Recipient\s*/i, "")];
+  for (const l of lines.slice(at + 1, at + 4)) {
+    if (!l.trim() || /donation|amount|estimated|frequency|[₹%¥]\s?\d/i.test(l)) break;
+    parts.push(l);
+  }
+  const name = parts.join(" ").replace(/[|_~]+/g, " ").replace(/\s+/g, " ").trim();
   return name && /[a-z]{2}/i.test(name) ? name.slice(0, 80) : null;
 }
 function parseDonationAmount(text, bid) {
@@ -559,7 +566,8 @@ const listJoin = (list) => (list.length < 2 ? list.join("") : `${list.slice(0, -
 function personCauses(keys) {
   const seen = new Map();
   keys.forEach((key) => (donations.get(key)?.recipients || []).forEach((name) => {
-    const clean = String(name || "").trim();
+    let clean = String(name || "").trim();
+    if (/\s/.test(clean) && clean === clean.toUpperCase()) clean = clean.toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase()).replace(/\b(For|The|And|Of|Via)\b/g, (m) => m.toLowerCase());
     if (clean && !seen.has(clean.toLowerCase())) seen.set(clean.toLowerCase(), clean);
   }));
   return [...seen.values()];
