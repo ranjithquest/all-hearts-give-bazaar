@@ -339,7 +339,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     const total = proofTotal(record);
     const bid = state.bid || Number(amount) || 0;
     const edited = isCoordinator() && (record.readAmounts || []).some((read, i) => read != null && Number(read) !== Number(amounts[i]));
-    const tally = total == null ? "" : `<p class="donate-tally ${state.done ? "is-ok" : "is-partial"}">${state.done ? "✓ " : ""}${formatBidRupees(total)} of ${formatBidRupees(bid)} donated${state.partial ? ` · ${formatBidRupees(bid - total)} to go` : ""}${edited ? `<small>Amounts edited after auto-read: ${(record.readAmounts || []).map((r) => (r == null ? "—" : formatBidRupees(r))).join(", ")}</small>` : ""}</p>`;
+    const tally = total == null ? (state.done && bid ? `<p class="donate-tally is-ok">✓ ${formatBidRupees(bid)} of ${formatBidRupees(bid)} donated</p>` : "") : `<p class="donate-tally ${state.done ? "is-ok" : "is-partial"}">${state.done ? "✓ " : ""}${formatBidRupees(total)} of ${formatBidRupees(bid)} donated${state.partial ? ` · ${formatBidRupees(bid - total)} to go` : ""}${edited ? `<small>Amounts edited after auto-read: ${(record.readAmounts || []).map((r) => (r == null ? "—" : formatBidRupees(r))).join(", ")}</small>` : ""}</p>`;
     const head = state.done
       ? `<span class="donate-done__tick" aria-hidden="true">✓</span>
       <h4>${escapeHtml(first)}’s donation is in. Thank you!</h4>
