@@ -4235,3 +4235,39 @@ img.is-img-broken {
   .raised-stage__faces li:hover, .raised-stage__faces li:focus { transform: none; translate: none; animation: none; }
   .raised-stage__faces .face-card, .raised-stage__faces .face-card--below { top: 50%; bottom: auto; transform: translate(-50%, -50%); }
 }
+/* Preview: raised sticker hangs off the frame's bottom edge so the photo stays clear */
+.auction-visual:has(.raised-sticker--preview) { overflow: visible; margin-bottom: 34px; }
+.auction-visual:has(.raised-sticker--preview)::after { clip-path: inset(9px); }
+.auction-visual .raised-sticker--preview,
+.auction-visual:has(.auction-gallery--carousel) .raised-sticker--preview { top: calc(100% + 8px); bottom: auto; }
+@media (max-width: 760px) { .auction-visual:has(.raised-sticker--preview) { margin-bottom: 26px; } }
+/* Celebratory contribution card + WebGL confetti layer */
+.raised-stage__faces .face-card {
+  padding: 30px 22px 14px; border: 3px solid #3d3d3d; border-radius: 20px; color: #fffaf0;
+  background:
+    radial-gradient(circle at 12% 22%, #f7ca45 0 3px, transparent 3.5px),
+    radial-gradient(circle at 88% 30%, #5b91e1 0 3px, transparent 3.5px),
+    radial-gradient(circle at 8% 78%, #fffaf0 0 2.5px, transparent 3px),
+    radial-gradient(circle at 92% 82%, #f7ca45 0 2.5px, transparent 3px),
+    radial-gradient(circle at 78% 10%, #2f9e5b 0 2.5px, transparent 3px),
+    linear-gradient(150deg, #e8173b 0%, #d01a5f 55%, #a3124a 100%);
+  box-shadow: 5px 5px 0 #3d3d3d, 0 18px 36px rgba(200, 16, 46, .28);
+  animation: face-card-pop .35s cubic-bezier(.2, 1.6, .4, 1);
+}
+@keyframes face-card-pop { from { opacity: 0; scale: .6; } }
+.face-card__art { position: absolute; top: -30px; left: 50%; width: 50px; height: 50px; translate: -50% 0; rotate: -8deg; filter: drop-shadow(2px 2px 0 rgba(61, 61, 61, .25)); }
+.face-card strong { font-size: 14px; }
+.face-card b { font-size: 30px; color: #f7ca45; text-shadow: 2px 2px 0 #3d3d3d; letter-spacing: -.01em; }
+.face-card small { color: rgba(255, 250, 240, .88); }
+.face-card__status { background: rgba(255, 250, 240, .2); }
+.face-card__status.is-done { background: #fffaf0; color: #1f7a45; }
+.face-confetti { position: fixed; inset: 0; z-index: 50; width: 100vw; height: 100vh; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .raised-stage__faces .face-card { animation: none; } }
+a.donate-proof .donate-proof__label { color: #1f7a45; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+a.donate-proof:hover .donate-proof__label { color: #145c33; }
+.face-confetti { z-index: 3; }
+.face-card__art { top: -26px; left: -22px; translate: none; rotate: -14deg; }
+@media (max-width: 760px) {
+  .auction-visual:has(.raised-sticker--preview) { margin-bottom: 64px; }
+  .auction-visual .raised-sticker--preview { left: auto; right: -6px; }
+}

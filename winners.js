@@ -349,7 +349,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     return `<div class="donate-done${state.partial ? " donate-done--partial" : ""}">
       ${head}
       <div class="donate-done__actions">
-        ${proofs.map((url, i) => `<span class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}${amounts[i] != null ? ` · ${formatBidRupees(amounts[i])}` : ""}${url ? "</a>" : "</span>"}</span>`).join("")}
+        ${proofs.map((url, i) => `<span class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}<span class="donate-proof__label">${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}</span>${amounts[i] != null ? ` · ${formatBidRupees(amounts[i])}` : ""}${url ? "</a>" : "</span>"}</span>`).join("")}
       </div>
       ${tally}
       <p class="donate-error" data-proof-error hidden></p>
@@ -546,6 +546,8 @@ function ringSpots(count, rect) {
 let heroResizeTimer;
 window.addEventListener("resize", () => { clearTimeout(heroResizeTimer); heroResizeTimer = setTimeout(renderHero, 200); });
 
+const FACE_CARD_ART = `<svg class="face-card__art" viewBox="0 0 64 64" aria-hidden="true"><path d="M10 56 24 18l22 22z" fill="#f7ca45" stroke="#3d3d3d" stroke-width="3" stroke-linejoin="round"/><path d="m16 40 9 9M20 29l15 15" stroke="#e8173b" stroke-width="4" stroke-linecap="round"/><path d="M33 16c2-6 8-8 12-5M44 26c6-4 12-2 14 2M38 8l2-5M52 14l5-3M56 34l5 1" fill="none" stroke="#3d3d3d" stroke-width="3" stroke-linecap="round"/><circle cx="30" cy="6" r="3" fill="#5b91e1"/><circle cx="58" cy="22" r="3" fill="#2f9e5b"/><path d="M47 40c0-3 4-4 5-1 1-3 5-2 5 1 0 3-5 6-5 6s-5-3-5-6z" fill="#e8173b"/></svg>`;
+
 function renderHero() {
   const people = winnerPeople();
   const ring = document.querySelector("#winnerRing");
@@ -560,7 +562,7 @@ function renderHero() {
       const paid = keys.reduce((sum, k) => { const st = donationState(k); return sum + (st.done ? Number(findBid(k)?.amount) || 0 : st.total); }, 0);
       const status = done ? `<em class="face-card__status is-done">✓ Donated</em>` : paid > 0 ? `<em class="face-card__status">${formatBidRupees(total - paid)} to go</em>` : `<em class="face-card__status">Donation pending</em>`;
       const items = bids.map((b) => b.letter ? `#${b.letter}` : "").filter(Boolean).join(", ");
-      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip"><strong>${escapeHtml(name)}</strong><b>${formatBidRupees(total * 2)}</b><small>${formatBidRupees(total)} bid + ${formatBidRupees(total)} Microsoft match</small><small>${bids.length} item${bids.length === 1 ? "" : "s"}${items ? ` · ${items}` : ""}</small>${status}</div>`;
+      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong><b>${formatBidRupees(total * 2)}</b><small>${formatBidRupees(total)} bid + ${formatBidRupees(total)} Microsoft match</small><small>${bids.length} item${bids.length === 1 ? "" : "s"}${items ? ` · ${items}` : ""}</small>${status}</div>`;
       return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${formatBidRupees(total * 2)} with Microsoft match${done ? ", donated" : ""}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
     }).join("");
   }
@@ -800,3 +802,73 @@ function renderProofThumbs(scope, warning = "") {
   updateProofTally(scope);
 }
 loadBoardLots();
+
+// WebGL confetti burst when a hero face's contribution card opens.
+const faceConfetti = (() => {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return () => {};
+  let gl, canvas, prog, buf, parts = [], raf = 0, last = 0;
+  const COLORS = [[0.91, 0.09, 0.23], [0.97, 0.79, 0.27], [0.36, 0.57, 0.88], [0.18, 0.62, 0.36], [0.95, 0.22, 0.57], [1, 0.98, 0.94]];
+  function init() {
+    canvas = document.createElement("canvas");
+    canvas.className = "face-confetti";
+    canvas.setAttribute("aria-hidden", "true");
+    document.body.appendChild(canvas);
+    gl = canvas.getContext("webgl", { premultipliedAlpha: false, alpha: true });
+    if (!gl) return false;
+    const sh = (type, src) => { const x = gl.createShader(type); gl.shaderSource(x, src); gl.compileShader(x); return x; };
+    prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, `attribute vec2 p;attribute vec4 a;attribute vec3 c;uniform vec2 v;varying vec4 va;varying vec3 vc;
+      void main(){gl_Position=vec4(p/v*2.0-1.0,0,1);gl_Position.y*=-1.0;gl_PointSize=a.x;va=a;vc=c;}`));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float;varying vec4 va;varying vec3 vc;
+      void main(){vec2 q=gl_PointCoord-.5;float s=sin(va.y),k=cos(va.y);q=vec2(k*q.x-s*q.y,s*q.x+k*q.y);q.x/=max(abs(cos(va.z)),.15);
+        if(va.w>.5){vec2 h=q*2.2;h.y=-h.y+.25;float d=pow(h.x*h.x+h.y*h.y-.25,3.)-h.x*h.x*h.y*h.y*h.y;if(d>0.)discard;}
+        else if(abs(q.x)>.22||abs(q.y)>.42)discard;gl_FragColor=vec4(vc,1);}`));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    buf = gl.createBuffer();
+    return true;
+  }
+  function frame(t) {
+    const dt = Math.min(0.033, (t - last) / 1000 || 0.016);
+    last = t;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = innerWidth, h = innerHeight;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    parts = parts.filter((q) => (q.life -= dt) > 0 && q.y < h + 40);
+    const data = new Float32Array(parts.length * 9);
+    parts.forEach((q, i) => {
+      q.vx *= 0.985; q.vy = q.vy * 0.985 + 900 * dt; q.x += q.vx * dt + Math.sin(q.spin * 0.7) * 0.6; q.y += q.vy * dt; q.rot += q.vr * dt; q.spin += q.vs * dt;
+      data.set([q.x * dpr, q.y * dpr, q.size * dpr * Math.min(1, q.life * 2), q.rot, q.spin, q.heart, ...q.color], i * 9);
+    });
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+    const attr = (name, size, off) => { const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 36, off * 4); };
+    attr("p", 2, 0); attr("a", 4, 2); attr("c", 3, 6);
+    gl.uniform2f(gl.getUniformLocation(prog, "v"), canvas.width, canvas.height);
+    gl.drawArrays(gl.POINTS, 0, parts.length);
+    raf = parts.length ? requestAnimationFrame(frame) : 0;
+    if (!raf) gl.clear(gl.COLOR_BUFFER_BIT);
+  }
+  return (rect) => {
+    if (!gl && !init()) return;
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    for (let i = 0; i < 70; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.3, sp = 380 + Math.random() * 520;
+      parts.push({ x: cx + (Math.random() - 0.5) * rect.width * 0.6, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, rot: Math.random() * 6.3, vr: (Math.random() - 0.5) * 12, spin: Math.random() * 6.3, vs: 6 + Math.random() * 10, size: 12 + Math.random() * 10, heart: Math.random() < 0.18 ? 1 : 0, color: COLORS[(Math.random() * COLORS.length) | 0], life: 1.6 + Math.random() * 0.8 });
+    }
+    if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); }
+  };
+})();
+let confettiFace = null;
+["pointerover", "focusin"].forEach((type) => document.addEventListener(type, (event) => {
+  const li = event.target.closest?.("#winnerRing li");
+  if (!li || li === confettiFace) return;
+  confettiFace = li;
+  requestAnimationFrame(() => { const card = li.querySelector(".face-card"); if (card) faceConfetti(card.getBoundingClientRect()); });
+}));
+document.addEventListener("pointerout", (event) => {
+  if (confettiFace && !confettiFace.contains(event.relatedTarget)) confettiFace = null;
+});
