@@ -79,8 +79,8 @@ async function loadBoardLots() {
 // Post-event: causes and winning bids (All Hearts 2026)
 const DONATION_CAUSES = [
   { name: "WeDoGood India Foundation", url: "https://benevity.go.link/3Ny4Q", qr: "qr/wedogood.png" },
-  { name: "Impact Guru Foundation", url: "https://benevity.go.link/b6k0U", qr: "qr/impactguru.png" },
-  { name: "Grace Cancer Foundation", url: "https://benevity.go.link/t5x8G", qr: "qr/gracecancer.png" },
+  { name: "Impact Guru Foundation", url: "https://benevity.go.link/7kfF0", qr: "qr/impactguru.png" },
+  { name: "Grace Cancer Foundation", url: "https://benevity.go.link/2Adue", qr: "qr/gracecancer.png" },
   { name: "Browse more NGOs in India", url: "https://microsoft.benevity.org/search/causes/list/?page=1&query=india&location=22.35284424,79.36334991&location_name=India&locale=en&layout=list", qr: "qr/browse-india.png", cta: "Browse" },
 ];
 
