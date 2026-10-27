@@ -78,10 +78,10 @@ async function loadBoardLots() {
 
 // Post-event: causes and winning bids (All Hearts 2026)
 const DONATION_CAUSES = [
-  { name: "Education", note: "Scan or tap to donate on Benevity", url: "https://aka.ms/GiveEducation25", qr: "qr/education.png" },
-  { name: "Children’s Health", note: "Scan or tap to donate on Benevity", url: "https://aka.ms/GiveHealth25", qr: "qr/health.png" },
-  { name: "Special Needs", note: "Scan or tap to donate on Benevity", url: "https://aka.ms/GiveSpecial25", qr: "qr/special.png" },
-  { name: "Environment", note: "Scan or tap to donate on Benevity", url: "https://aka.ms/GiveConservation25", qr: "qr/environment.png" },
+  { name: "WeDoGood India Foundation", url: "https://benevity.go.link/3Ny4Q", qr: "qr/wedogood.png" },
+  { name: "Impact Guru Foundation", url: "https://benevity.go.link/b6k0U", qr: "qr/impactguru.png" },
+  { name: "Grace Cancer Foundation", url: "https://benevity.go.link/t5x8G", qr: "qr/gracecancer.png" },
+  { name: "Browse more NGOs in India", url: "https://microsoft.benevity.org/search/causes/list/?page=1&query=india&location=22.35284424,79.36334991&location_name=India&locale=en&layout=list", qr: "qr/browse-india.png", cta: "Browse" },
 ];
 
 const WINNING_BIDS = [
@@ -276,10 +276,10 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
       ${mine ? `<button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload a different screenshot</button>` : ""}
     </div>`;
   }
-  const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>Donate ↗</i></a>`).join("");
+  const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>${c.cta || "Donate"} ↗</i></a>`).join("");
   return `<div class="donate-step">
       <h4><b>1</b>Donate ${formatBidRupees(amount)} on Benevity</h4>
-      <p>Pick any one cause. Microsoft matches your donation.</p>
+      <p>Pick any one NGO. Microsoft matches your donation.</p>
       <div class="donate-causes">${causes}</div>
     </div>
     <div class="donate-step">
