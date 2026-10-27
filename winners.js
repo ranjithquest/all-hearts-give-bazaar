@@ -559,10 +559,8 @@ function renderHero() {
       const done = keys.every(isDonated);
       const bids = keys.map(findBid).filter(Boolean);
       const total = bids.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-      const paid = keys.reduce((sum, k) => { const st = donationState(k); return sum + (st.done ? Number(findBid(k)?.amount) || 0 : st.total); }, 0);
-      const status = done ? `<em class="face-card__status is-done">✓ Donated</em>` : paid > 0 ? `<em class="face-card__status">${formatBidRupees(total - paid)} to go</em>` : `<em class="face-card__status">Donation pending</em>`;
       const items = bids.map((b) => b.letter ? `#${b.letter}` : "").filter(Boolean).join(", ");
-      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong><b>${formatBidRupees(total * 2)}</b><small>${formatBidRupees(total)} bid + ${formatBidRupees(total)} Microsoft match</small><small>${bids.length} item${bids.length === 1 ? "" : "s"}${items ? ` · ${items}` : ""}</small>${status}</div>`;
+      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong><b>${formatBidRupees(total * 2)}</b><small>${formatBidRupees(total)} bid + ${formatBidRupees(total)} Microsoft match</small><small>${bids.length} item${bids.length === 1 ? "" : "s"}${items ? ` · ${items}` : ""}</small></div>`;
       return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${formatBidRupees(total * 2)} with Microsoft match${done ? ", donated" : ""}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
     }).join("");
   }

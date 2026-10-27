@@ -4271,3 +4271,20 @@ a.donate-proof:hover .donate-proof__label { color: #145c33; }
   .auction-visual:has(.raised-sticker--preview) { margin-bottom: 64px; }
   .auction-visual .raised-sticker--preview { left: auto; right: -6px; }
 }
+/* Light, pleasant card; text wraps inside instead of overflowing */
+.raised-stage__faces .face-card {
+  box-sizing: border-box; width: max-content; max-width: min(300px, calc(100vw - 32px)); color: #3d3d3d;
+  background:
+    radial-gradient(circle at 12% 22%, #f7ca45 0 3px, transparent 3.5px),
+    radial-gradient(circle at 88% 30%, #5b91e1 0 3px, transparent 3.5px),
+    radial-gradient(circle at 8% 78%, #e68ca8 0 2.5px, transparent 3px),
+    radial-gradient(circle at 92% 82%, #f7ca45 0 2.5px, transparent 3px),
+    radial-gradient(circle at 78% 10%, #2f9e5b 0 2.5px, transparent 3px),
+    linear-gradient(160deg, #fff8e8 0%, #ffe9ef 100%);
+  box-shadow: 5px 5px 0 #3d3d3d, 0 18px 36px rgba(200, 16, 46, .16);
+}
+.face-card strong { color: #3d3d3d; overflow-wrap: anywhere; }
+.face-card b { color: #c8102e; text-shadow: 2px 2px 0 #f7ca45; }
+.face-card small { color: #6b5e4e; white-space: normal; text-wrap: balance; overflow-wrap: anywhere; }
+.face-card__status { background: #f5e3c6; color: #7a5a2e; }
+.face-card__status.is-done { background: #2f9e5b; color: #fff; }
