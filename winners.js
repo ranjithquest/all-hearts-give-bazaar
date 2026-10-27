@@ -135,6 +135,7 @@ const EXTRA_EMAILS = {
   "prakash arjunan": "prakash.arjunan@microsoft.com",
   "srishty banga": "srishtybanga@microsoft.com",
   "anandhi hariharan": "anandhi.hariharan@microsoft.com",
+  "adithya holehonnur": "adithyah@microsoft.com",
   "anudish": "akoshal@microsoft.com",
   "ninad": "ninadkale@microsoft.com",
 };
