@@ -560,8 +560,8 @@ function renderHero() {
       const bids = keys.map(findBid).filter(Boolean);
       const total = bids.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
       const items = bids.map((b) => b.letter ? `#${b.letter}` : "").filter(Boolean).join(", ");
-      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong><b>${formatBidRupees(total * 2)}</b><small>Bid + Microsoft match</small><small>${bids.length} item${bids.length === 1 ? "" : "s"} won${items ? ` · ${items}` : ""}</small></div>`;
-      return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${formatBidRupees(total * 2)} with Microsoft match${done ? ", donated" : ""}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
+      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong><small>${bids.length} item${bids.length === 1 ? "" : "s"} won${items ? ` · ${items}` : ""}</small></div>`;
+      return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${bids.length} item${bids.length === 1 ? "" : "s"} won">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
     }).join("");
   }
   const counter = document.querySelector("#donatedCount");
