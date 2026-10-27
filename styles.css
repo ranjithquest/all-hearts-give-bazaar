@@ -4011,6 +4011,14 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .donate-upload span { display: grid; gap: 2px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .donate-upload small { color: var(--ink-soft); }
 .donate-upload img { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; }
+.donate-upload__clear {
+  position: absolute; z-index: 2; top: 6px; right: 6px; width: 28px; height: 28px; padding: 0;
+  border: 0; border-radius: 50%; color: #fff; background: var(--teal); font-size: 20px; line-height: 1; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
+}
+.donate-upload__clear[hidden] { display: none; }
+.donate-upload.is-dragover { border-color: var(--teal); background: #fff1f3; }
+.donate-upload u { color: var(--teal); text-underline-offset: 3px; }
 .donate-submit { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 999px; background: var(--teal); color: #fff; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
 .donate-submit:disabled { background: #cdbfa6; cursor: not-allowed; }
 .donate-error { margin: 8px 0 0; color: #b00020; font-size: 14px; font-weight: 700; }
@@ -4060,28 +4068,6 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .winner-card__top[data-preview] { cursor: zoom-in; border-radius: 14px; transition: background .15s; }
 .winner-card__top[data-preview]:hover strong { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; }
 .winner-card__top[data-preview]:focus-visible { outline: 3px solid rgba(207, 4, 59, .35); outline-offset: 4px; }
-.item-preview {
-  width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px);
-  padding: 0; border: 0; border-radius: 22px; background: #fbf3e4; color: inherit;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, .3); overflow: auto;
-}
-.item-preview::backdrop { background: rgba(30, 20, 15, .6); }
-.item-preview__close {
-  position: sticky; top: 12px; float: right; margin: 12px 12px -52px 0; z-index: 2;
-  width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(255,255,255,.92);
-  font-size: 26px; line-height: 1; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.2);
-}
-.item-preview__main { display: block; width: 100%; max-height: 62vh; object-fit: contain; background: #2b2420; }
-.item-preview__main--empty { display: grid; place-items: center; height: 240px; font-size: 64px; color: var(--teal); background: #f3e2c6; }
-.item-preview__thumbs { display: flex; gap: 8px; padding: 12px 20px 0; overflow-x: auto; }
-.item-preview__thumbs button { flex: none; width: 56px; height: 56px; padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; cursor: pointer; background: none; opacity: .7; }
-.item-preview__thumbs button.is-active { border-color: var(--teal); opacity: 1; }
-.item-preview__thumbs img { width: 100%; height: 100%; object-fit: cover; }
-.item-preview__body { padding: 18px 22px 24px; display: grid; gap: 10px; }
-.item-preview__body h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 22px; }
-.item-preview__body h3 .winner-card__letter { position: static; flex: none; }
-.item-preview__body p { margin: 0; line-height: 1.6; white-space: pre-line; }
-.item-preview__body .winner-card__by { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* Donate only for the signed-in winner */
 .donate-status {

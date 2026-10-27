@@ -157,9 +157,18 @@ function viewerEmail() {
   return String((vibeStorage || window.vibehub?.storage)?.viewerEmail || "").toLowerCase();
 }
 
-function isViewer(name) {
+const PROOF_LABEL_EMPTY = `<strong><u>Browse file</u> or drag and drop</strong><small>Your Benevity payment screenshot (PNG or JPG)</small>`;
+
+// Temporary: lets the organizer test the donation flow on one winner row.
+const TEST_DONOR = { email: "ranjithravi@microsoft.com", letter: "A" };
+
+function isViewer(name, letter) {
   const me = viewerEmail();
   if (!me) return false;
+  if (me === TEST_DONOR.email && letter === TEST_DONOR.letter) {
+    const bid = WINNING_BIDS.find((b) => lotLetter(b[0]) === letter);
+    if (bid?.[3]?.[0]?.[0] === name) return true;
+  }
   const email = emailFor(name);
   if (email) return email === me;
   const alias = me.split("@")[0].replace(/[^a-z]/g, "");
@@ -224,7 +233,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
         ${winners.map(([name, amount]) => {
           const key = donationKey(letter, name);
           const done = donations.has(key);
-          const mine = isViewer(name);
+          const mine = isViewer(name, letter);
           const open = mine && openPanel === key;
           const action = mine
             ? `<button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? "✓ Donated" : open ? "Close" : "Donate"}</button>`
@@ -272,8 +281,9 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount }) {
       <h4><b>2</b>Upload your payment screenshot</h4>
       <label class="donate-upload">
         <input type="file" accept="image/*" data-proof-input>
-        <span data-proof-label><strong>Choose screenshot</strong><small>The Benevity receipt showing ${formatBidRupees(amount)}</small></span>
+        <span data-proof-label>${PROOF_LABEL_EMPTY}</span>
         <img data-proof-preview alt="" hidden>
+        <button type="button" class="donate-upload__clear" data-proof-clear aria-label="Remove screenshot" hidden>×</button>
       </label>
       <button type="button" class="donate-submit" data-proof-submit="${escapeHtml(key)}" disabled>Submit donation proof</button>
       <p class="donate-error" data-proof-error role="alert" hidden></p>
@@ -374,41 +384,88 @@ function renderHero() {
 renderWinners();
 renderHero();
 document.querySelector("#winnerSearch")?.addEventListener("input", (event) => renderWinners(event.target.value));
+const CATEGORY_COLORS = { experiences: "#ff8a7f", services: "#f7ca45", products: "#8bb6ee", food: "#a7e5cb", leadership: "#f7a55c", travel: "#eba7bc" };
+
 function openPreview(title) {
   const entry = buildEntries().find(({ lot, bid }) => (lot?.title || bid?.[0]) === title);
-  if (!entry) return;
+  const dialog = document.querySelector("#auctionDialog");
+  if (!entry || !dialog) return;
   const { lot, bid } = entry;
-  const by = lot?.contributor || bid?.[1] || "";
-  const city = bid?.[2] || (lot?.city === "Remote" ? "Anywhere" : lot?.city || "");
+  const $ = (id) => dialog.querySelector(`#${id}`);
   const letter = lotLetter(title) || lotLetter(bid?.[0]);
-  const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
+  const city = bid?.[2] || (lot?.city === "Remote" ? "Anywhere / remote" : lot?.city === "Bengaluru" ? "Bangalore" : lot?.city || "Anywhere");
+  const winners = bid?.[3] || [];
+  $("auctionLotNumber").textContent = letter ? `#${letter}` : "";
+  $("auctionKicker").textContent = letter ? `ITEM ${letter}` : "UP FOR AUCTION";
+  $("auctionTitle").textContent = title;
+  $("auctionContributor").textContent = lot?.contributor || bid?.[1] || "";
+  $("auctionDescription").textContent = lot?.description || "";
+  $("auctionLocation").textContent = city;
+  $("auctionQuantity").textContent = lot?.quantity || winners.length || 1;
+  $("auctionStartingBid").textContent = Number(lot?.startingBid || 500).toLocaleString("en-IN");
+  $("auctionRuleLabel").textContent = winners.length ? "WON BY" : "RESULT";
+  $("auctionWonBy").textContent = winners.length ? winners.map(([n]) => n).join(", ") : "No winning bid";
+  const visual = $("auctionVisual");
+  visual.style.background = CATEGORY_COLORS[lot?.category] || CATEGORY_COLORS.experiences;
+  visual.querySelector(".auction-gallery")?.remove();
   const photos = lot ? lotImages(lot).map(lotImageUrl).filter(Boolean) : [];
-  let dialog = document.querySelector("#itemPreview");
-  if (!dialog) {
-    dialog = document.createElement("dialog");
-    dialog.id = "itemPreview";
-    dialog.className = "item-preview";
-    document.body.append(dialog);
-    dialog.addEventListener("click", (event) => {
-      if (event.target === dialog || event.target.closest("[data-preview-close]")) dialog.close();
-      const thumb = event.target.closest("[data-preview-thumb]");
-      if (thumb) {
-        dialog.querySelector(".item-preview__main").src = thumb.dataset.previewThumb;
-        dialog.querySelectorAll("[data-preview-thumb]").forEach((t) => t.classList.toggle("is-active", t === thumb));
-      }
-    });
+  $("auctionGlyph").hidden = photos.length > 0;
+  if (photos.length) {
+    const gallery = document.createElement("div");
+    const multiple = photos.length > 1;
+    gallery.className = `auction-gallery${multiple ? " auction-gallery--carousel" : ""}`;
+    gallery.innerHTML = `<div class="auction-gallery__track">${photos.map((src, i) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(title)} photo ${i + 1} of ${photos.length}">`).join("")}</div>${multiple ? `
+      <button class="auction-gallery__arrow auction-gallery__arrow--prev" type="button" data-gallery-step="-1" aria-label="Previous photo">‹</button>
+      <button class="auction-gallery__arrow auction-gallery__arrow--next" type="button" data-gallery-step="1" aria-label="Next photo">›</button>
+      <div class="auction-gallery__dots" aria-hidden="true">${photos.map(() => "<i></i>").join("")}</div>` : ""}`;
+    visual.appendChild(gallery);
   }
-  dialog.innerHTML = `
-    <button type="button" class="item-preview__close" data-preview-close aria-label="Close">×</button>
-    ${photos.length ? `<img class="item-preview__main" src="${escapeHtml(photos[0])}" alt="${escapeHtml(title)}">` : `<div class="item-preview__main item-preview__main--empty" aria-hidden="true">♥</div>`}
-    ${photos.length > 1 ? `<div class="item-preview__thumbs">${photos.map((src, i) => `<button type="button" class="${i ? "" : "is-active"}" data-preview-thumb="${escapeHtml(src)}" aria-label="Photo ${i + 1}"><img src="${escapeHtml(src)}" alt=""></button>`).join("")}</div>` : ""}
-    <div class="item-preview__body">
-      <h3>${letter ? `<span class="winner-card__letter">${letter}</span>` : ""}${escapeHtml(title)}</h3>
-      <span class="winner-card__by">${avatar(by, byEmail)}${escapeHtml(by)}${city ? ` · ${escapeHtml(city)}` : ""}</span>
-      ${lot?.description ? `<p>${escapeHtml(lot.description)}</p>` : ""}
-    </div>`;
   dialog.showModal();
+  setGallerySlide(visual.querySelector(".auction-gallery"), 0);
 }
+
+function setGallerySlide(gallery, index) {
+  if (!gallery) return fitPreviewPhoto();
+  const count = gallery.querySelectorAll(".auction-gallery__track img").length;
+  const next = (index + count) % count;
+  gallery.dataset.index = String(next);
+  gallery.querySelector(".auction-gallery__track").style.transform = `translateX(-${next * 100}%)`;
+  gallery.querySelectorAll(".auction-gallery__dots i").forEach((dot, i) => dot.classList.toggle("is-active", i === next));
+  fitPreviewPhoto();
+}
+
+// Size the photo frame to the current photo's aspect ratio so nothing is cropped.
+function fitPreviewPhoto() {
+  const visual = document.querySelector("#auctionVisual");
+  if (!visual) return;
+  const gallery = visual.querySelector(".auction-gallery");
+  visual.classList.remove("is-photo-fit");
+  visual.style.width = "";
+  visual.style.height = "";
+  if (!gallery) return;
+  const img = gallery.querySelectorAll(".auction-gallery__track img")[Number(gallery.dataset.index || 0)];
+  if (!img) return;
+  if (!img.complete || !img.naturalWidth) return img.addEventListener("load", fitPreviewPhoto, { once: true });
+  if (!visual.getBoundingClientRect().width) return;
+  const ratio = img.naturalWidth / img.naturalHeight;
+  const border = parseFloat(getComputedStyle(visual).borderLeftWidth) || 0;
+  const maxWidth = visual.getBoundingClientRect().width - border * 2;
+  const maxHeight = window.innerHeight * (window.matchMedia("(max-width: 760px)").matches ? 0.55 : 0.68) - border * 2;
+  const width = Math.min(maxWidth, maxHeight * ratio);
+  visual.classList.add("is-photo-fit");
+  visual.style.width = `${Math.round(width + border * 2)}px`;
+  visual.style.height = `${Math.round(width / ratio + border * 2)}px`;
+}
+window.addEventListener("resize", () => { if (document.querySelector("#auctionDialog")?.open) fitPreviewPhoto(); });
+document.querySelector("#auctionDialog")?.addEventListener("click", (event) => {
+  const dialog = event.currentTarget;
+  if (event.target === dialog || event.target.closest("[data-close-auction]")) return dialog.close();
+  const arrow = event.target.closest("[data-gallery-step]");
+  if (arrow) {
+    const gallery = arrow.closest(".auction-gallery");
+    setGallerySlide(gallery, Number(gallery.dataset.index || 0) + Number(arrow.dataset.galleryStep));
+  }
+});
 
 document.addEventListener("keydown", (event) => {
   const top = event.target.closest?.("[data-preview]");
@@ -426,6 +483,22 @@ document.addEventListener("click", (event) => {
   }
   const replace = event.target.closest("[data-replace]")?.dataset.replace;
   if (replace) { panelReplacing = true; renderWinners(); return; }
+  const clear = event.target.closest("[data-proof-clear]");
+  if (clear) {
+    event.preventDefault();
+    const scope = clear.closest(".donate-inline");
+    const input = scope.querySelector("[data-proof-input]");
+    const preview = scope.querySelector("[data-proof-preview]");
+    input.value = "";
+    if (preview.src) URL.revokeObjectURL(preview.src);
+    preview.removeAttribute("src");
+    preview.hidden = true;
+    clear.hidden = true;
+    scope.querySelector("[data-proof-label]").innerHTML = PROOF_LABEL_EMPTY;
+    scope.querySelector("[data-proof-error]").hidden = true;
+    scope.querySelector("[data-proof-submit]").disabled = true;
+    return;
+  }
   const submit = event.target.closest("[data-proof-submit]");
   if (submit) return submitProof(submit.dataset.proofSubmit, submit.closest(".donate-inline"));
   const filter = event.target.closest("button[data-filter]")?.dataset.filter;
@@ -436,6 +509,12 @@ document.addEventListener("click", (event) => {
     document.querySelector("#winnersList")?.closest(".results-block")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 });
+["dragenter", "dragover"].forEach((type) => document.addEventListener(type, (event) => {
+  event.target.closest?.(".donate-upload")?.classList.add("is-dragover");
+}));
+["dragleave", "drop"].forEach((type) => document.addEventListener(type, (event) => {
+  event.target.closest?.(".donate-upload")?.classList.remove("is-dragover");
+}));
 document.addEventListener("change", (event) => {
   if (!event.target.matches("[data-proof-input]")) return;
   const scope = event.target.closest(".donate-inline");
@@ -445,6 +524,7 @@ document.addEventListener("change", (event) => {
   preview.src = URL.createObjectURL(file);
   preview.hidden = false;
   scope.querySelector("[data-proof-label]").innerHTML = `<strong>${escapeHtml(file.name)}</strong><small>Tap to change</small>`;
+  scope.querySelector("[data-proof-clear]").hidden = false;
   scope.querySelector("[data-proof-submit]").disabled = false;
 });
 loadBoardLots();
