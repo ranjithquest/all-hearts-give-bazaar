@@ -584,7 +584,8 @@ function renderHero() {
       const done = keys.every(isDonated);
       const bids = keys.map(findBid).filter(Boolean);
       const total = bids.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-      const items = bids.map((b) => b.letter ? `#${b.letter}` : "").filter(Boolean).join(", ");
+      const letters = bids.map((b) => b.letter).filter(Boolean);
+      const items = letters.length ? `#${letters.join(", ")}` : "";
       const causes = personCauses(keys);
       const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong>${causes.length ? `<small class="face-card__cause">Gives <em>${escapeHtml(listJoin(causes))}</em></small>` : `<small>${bids.length} item${bids.length === 1 ? "" : "s"} won${items ? ` · ${items}` : ""}</small>`}</div>`;
       return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${causes.length ? `gives to ${escapeHtml(listJoin(causes))}` : `${bids.length} item${bids.length === 1 ? "" : "s"} won`}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
