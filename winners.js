@@ -291,7 +291,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
   const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>${c.cta || "Donate"} ↗</i></a>`).join("");
   return `<div class="donate-step">
       <h4><b>1</b>Donate ${formatBidRupees(amount)} on Benevity</h4>
-      <p>Pick any one NGO. Microsoft matches your donation.</p>
+      <p>Give it all to one NGO or split it across a few. Microsoft matches your donation.</p>
       <div class="donate-causes">${causes}</div>
     </div>
     <div class="donate-step">
