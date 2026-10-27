@@ -196,7 +196,7 @@ function buildEntries() {
     else unmatched.push(bid);
   });
   const entries = [
-    ...lots.map((lot) => ({ lot, bid: bidByLot.get(lot) || null })),
+    ...lots.filter((lot) => bidByLot.has(lot)).map((lot) => ({ lot, bid: bidByLot.get(lot) })),
     ...unmatched.map((bid) => ({ lot: null, bid })),
   ];
   const letterOf = (e) => lotLetter(e.lot?.title || e.bid?.[0]) || "~";
@@ -254,9 +254,8 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
 }
 
 
-function teamsChat(email, text) {
-  return `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(email)}&message=${encodeURIComponent(text)}`;
-}
+const ORGANISERS_LINE = "the organising team (Abhishek, Mohan and Ranjith)";
+const ORGANISERS_LINE_CAP = ORGANISERS_LINE[0].toUpperCase() + ORGANISERS_LINE.slice(1);
 
 function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = true }) {
   const record = donations.get(key);
@@ -264,13 +263,11 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
   const byFirst = String(by).split(/[ ,]/)[0];
   if (record && !panelReplacing) {
     const proof = lotImageUrl(record.proof);
-    const chat = byEmail ? teamsChat(byEmail, !mine ? "" : `Hi ${byFirst}, I won your GIVE Bazaar item${letter ? ` ${letter}` : ""} "${title}" and have completed my donation. When can we coordinate the gift?`) : "";
     return `<div class="donate-done">
       <span class="donate-done__tick" aria-hidden="true">✓</span>
       <h4>${escapeHtml(first)}’s donation is in. Thank you!</h4>
-      <p>${escapeHtml(byFirst)} will reach out to arrange the gift. You two can coordinate directly.</p>
+      <p>${ORGANISERS_LINE_CAP} will coordinate with ${escapeHtml(byFirst)} to get the gift to ${mine ? "you" : escapeHtml(first)}.</p>
       <div class="donate-done__actions">
-        ${chat ? `<a class="donate-chat" href="${escapeHtml(chat)}" target="_blank" rel="noopener noreferrer">${avatar(by, byEmail)}Chat with ${escapeHtml(byFirst)} in Teams ↗</a>` : ""}
         ${proof ? `<a class="donate-proof" href="${escapeHtml(proof)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(proof)}" alt="Payment screenshot">View screenshot</a>` : ""}
       </div>
       ${mine ? `<button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload a different screenshot</button>` : ""}
@@ -295,7 +292,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     </div>
     <div class="donate-step donate-step--next">
       <h4><b>3</b>Get your gift</h4>
-      <p>Once submitted, ${escapeHtml(byFirst)} will reach out to arrange it with you.</p>
+      <p>Once submitted, ${ORGANISERS_LINE} will coordinate with ${escapeHtml(byFirst)} to get it to you.</p>
     </div>`;
 }
 
