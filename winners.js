@@ -158,7 +158,10 @@ function viewerEmail() {
   return String((vibeStorage || window.vibehub?.storage)?.viewerEmail || "").toLowerCase();
 }
 
-const PROOF_LABEL_EMPTY = `<strong><u>Browse file</u> or drag and drop</strong><small>Your Benevity payment screenshot (PNG or JPG)</small>`;
+const PROOF_LABEL_EMPTY = `<strong><u>Browse files</u> or drag and drop</strong><small>Your Benevity payment screenshots (PNG or JPG). Add one for each donation.</small>`;
+const PROOF_LABEL_MORE = `<strong><u>Add another screenshot</u></strong><small>Donated to more than one NGO? Add each receipt.</small>`;
+const MAX_PROOFS = 6;
+const proofList = (record) => (record?.proofs?.length ? record.proofs : record?.proof ? [record.proof] : []);
 
 // Temporary: a test item, visible only to coordinators, to try the donation flow.
 const TEST_BID = ["Test item (coordinators only)", "Mohan Kumar", "Anywhere", [["Mohan Kumar", 100], ["Abhishek Ranjan", 100], ["Ranjith Ravi", 100]]];
@@ -274,15 +277,15 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
   const first = name.split(" ")[0];
   const byFirst = String(by).split(/[ ,]/)[0];
   if (record && !panelReplacing) {
-    const proof = lotImageUrl(record.proof);
+    const proofs = proofList(record).map(lotImageUrl).filter(Boolean);
     return `<div class="donate-done">
       <span class="donate-done__tick" aria-hidden="true">✓</span>
       <h4>${escapeHtml(first)}’s donation is in. Thank you!</h4>
       <p>${ORGANISERS_LINE_CAP} will coordinate with ${escapeHtml(byFirst)} to get the gift to ${mine ? "you" : escapeHtml(first)}.</p>
       <div class="donate-done__actions">
-        ${proof ? `<a class="donate-proof" href="${escapeHtml(proof)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(proof)}" alt="Payment screenshot">View screenshot</a>` : ""}
+        ${proofs.map((url, i) => `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}</a>`).join("")}
       </div>
-      ${mine ? `<button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload a different screenshot</button>` : ""}
+      ${mine ? `<button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload different screenshots</button>` : ""}
     </div>`;
   }
   const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>${c.cta || "Donate"} ↗</i></a>`).join("");
@@ -292,12 +295,11 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
       <div class="donate-causes">${causes}</div>
     </div>
     <div class="donate-step">
-      <h4><b>2</b>Upload your payment screenshot</h4>
+      <h4><b>2</b>Upload your payment screenshots</h4>
+      <ul class="donate-thumbs" data-proof-thumbs hidden></ul>
       <label class="donate-upload">
-        <input type="file" accept="image/*" data-proof-input>
+        <input type="file" accept="image/*" multiple data-proof-input>
         <span data-proof-label>${PROOF_LABEL_EMPTY}</span>
-        <img data-proof-preview alt="" hidden>
-        <button type="button" class="donate-upload__clear" data-proof-clear aria-label="Remove screenshot" hidden>×</button>
       </label>
       <button type="button" class="donate-submit" data-proof-submit="${escapeHtml(key)}" disabled>Submit donation proof</button>
       <p class="donate-error" data-proof-error role="alert" hidden></p>
@@ -352,23 +354,29 @@ function notifyTeams(info, byEmail) {
 
 async function submitProof(key, scope) {
   const info = findBid(key);
-  const file = scope.querySelector("[data-proof-input]")?.files?.[0];
+  const files = scope.proofFiles || [];
   const button = scope.querySelector("[data-proof-submit]");
   const error = scope.querySelector("[data-proof-error]");
-  if (!info || !file) return;
+  if (!info || !files.length) return;
   const fail = (msg) => { error.textContent = msg; error.hidden = false; button.disabled = false; button.textContent = "Submit donation proof"; };
   if (!vibeStorage?.images || !vibeStorage?.shared || vibeStorage.isPublicShare) return fail("Please open the site signed in to VibeHub to upload.");
-  if (file.size > 10 * 1024 * 1024) return fail("That image is over 10 MB. Try a smaller screenshot.");
+  if (files.some((f) => f.size > 10 * 1024 * 1024)) return fail("One of the images is over 10 MB. Try a smaller screenshot.");
   button.disabled = true;
   button.textContent = "Uploading…";
   error.hidden = true;
   try {
-    const imageKey = `donation-${key}-${Date.now()}`;
-    const meta = await vibeStorage.images.set(imageKey, file, { public: true });
-    const record = { ...info, proof: { key: imageKey, viewer: vibeStorage.viewerEmail || "", url: meta?.url || "" }, submittedBy: vibeStorage.viewerEmail || "", at: new Date().toISOString() };
+    const stamp = Date.now();
+    const proofs = [];
+    for (const [i, file] of files.entries()) {
+      if (files.length > 1) button.textContent = `Uploading ${i + 1} of ${files.length}…`;
+      const imageKey = `donation-${key}-${stamp}${i ? `-${i + 1}` : ""}`;
+      const meta = await vibeStorage.images.set(imageKey, file, { public: true });
+      proofs.push({ key: imageKey, viewer: vibeStorage.viewerEmail || "", url: meta?.url || "" });
+    }
+    const record = { ...info, proof: proofs[0], proofs, submittedBy: vibeStorage.viewerEmail || "", at: new Date().toISOString() };
     const old = donations.get(key);
     await vibeStorage.shared.set(DONATION_KEY_PREFIX + key, record);
-    if (old?.proof?.key) vibeStorage.images.delete(old.proof.key).catch(() => {});
+    proofList(old).forEach((p) => p?.key && vibeStorage.images.delete(p.key).catch(() => {}));
     donations.set(key, record);
     if (!old) notifyTeams(info, info.byEmail);
     panelReplacing = false;
@@ -531,20 +539,12 @@ document.addEventListener("click", (event) => {
   }
   const replace = event.target.closest("[data-replace]")?.dataset.replace;
   if (replace) { panelReplacing = true; renderWinners(); return; }
-  const clear = event.target.closest("[data-proof-clear]");
+  const clear = event.target.closest("[data-proof-remove]");
   if (clear) {
     event.preventDefault();
     const scope = clear.closest(".donate-inline");
-    const input = scope.querySelector("[data-proof-input]");
-    const preview = scope.querySelector("[data-proof-preview]");
-    input.value = "";
-    if (preview.src) URL.revokeObjectURL(preview.src);
-    preview.removeAttribute("src");
-    preview.hidden = true;
-    clear.hidden = true;
-    scope.querySelector("[data-proof-label]").innerHTML = PROOF_LABEL_EMPTY;
-    scope.querySelector("[data-proof-error]").hidden = true;
-    scope.querySelector("[data-proof-submit]").disabled = true;
+    scope.proofFiles = (scope.proofFiles || []).filter((_, i) => i !== Number(clear.dataset.proofRemove));
+    renderProofThumbs(scope);
     return;
   }
   const submit = event.target.closest("[data-proof-submit]");
@@ -568,13 +568,27 @@ document.addEventListener("click", (event) => {
 document.addEventListener("change", (event) => {
   if (!event.target.matches("[data-proof-input]")) return;
   const scope = event.target.closest(".donate-inline");
-  const file = event.target.files?.[0];
-  if (!file || !scope) return;
-  const preview = scope.querySelector("[data-proof-preview]");
-  preview.src = URL.createObjectURL(file);
-  preview.hidden = false;
-  scope.querySelector("[data-proof-label]").innerHTML = `<strong>${escapeHtml(file.name)}</strong><small>Tap to change</small>`;
-  scope.querySelector("[data-proof-clear]").hidden = false;
-  scope.querySelector("[data-proof-submit]").disabled = false;
+  const picked = [...(event.target.files || [])].filter((f) => f.type.startsWith("image/"));
+  event.target.value = "";
+  if (!picked.length || !scope) return;
+  const all = [...(scope.proofFiles || []), ...picked];
+  scope.proofFiles = all.slice(0, MAX_PROOFS);
+  renderProofThumbs(scope, all.length > MAX_PROOFS ? `You can add up to ${MAX_PROOFS} screenshots.` : "");
 });
+
+function renderProofThumbs(scope, warning = "") {
+  const files = scope.proofFiles || [];
+  const list = scope.querySelector("[data-proof-thumbs]");
+  list.querySelectorAll("img").forEach((img) => URL.revokeObjectURL(img.src));
+  list.innerHTML = files.map((file, i) => `<li><img src="${URL.createObjectURL(file)}" alt=""><span>${escapeHtml(file.name)}</span><button type="button" class="donate-upload__clear" data-proof-remove="${i}" aria-label="Remove ${escapeHtml(file.name)}">×</button></li>`).join("");
+  list.hidden = !files.length;
+  scope.querySelector(".donate-upload").hidden = files.length >= MAX_PROOFS;
+  scope.querySelector("[data-proof-label]").innerHTML = files.length ? PROOF_LABEL_MORE : PROOF_LABEL_EMPTY;
+  const error = scope.querySelector("[data-proof-error]");
+  error.textContent = warning;
+  error.hidden = !warning;
+  const submit = scope.querySelector("[data-proof-submit]");
+  submit.disabled = !files.length;
+  submit.textContent = files.length > 1 ? `Submit ${files.length} screenshots` : "Submit donation proof";
+}
 loadBoardLots();

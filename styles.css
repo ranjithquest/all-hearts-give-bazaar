@@ -4028,6 +4028,13 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
   box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
 }
 .donate-upload__clear[hidden] { display: none; }
+.donate-upload[hidden] { display: none; }
+.donate-thumbs { display: grid; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+.donate-thumbs[hidden] { display: none; }
+.winner-card__bids .donate-thumbs li { position: relative; display: flex; align-items: center; gap: 12px; justify-content: flex-start; padding: 8px 44px 8px 8px; border: 1px solid #e6d6b8; border-radius: 12px; background: #fff; }
+.donate-thumbs img { width: 52px; height: 52px; flex: none; border-radius: 8px; object-fit: cover; }
+.winner-card__bids .donate-thumbs span { flex: 1; min-width: 0; margin: 0; text-align: left; overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.donate-thumbs .donate-upload__clear { top: 50%; right: 10px; transform: translateY(-50%); }
 .donate-upload.is-dragover { border-color: var(--teal); background: #fff1f3; }
 .donate-upload u { color: var(--teal); text-underline-offset: 3px; }
 .donate-submit { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 999px; background: var(--teal); color: #fff; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
