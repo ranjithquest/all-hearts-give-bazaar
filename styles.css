@@ -4101,3 +4101,5 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 }
 .joy-title em { font-style: italic; color: var(--teal); }
 .joy-title em { white-space: nowrap; }
+
+.flow-steps li { border-radius: 18px; }
