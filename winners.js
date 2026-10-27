@@ -216,10 +216,6 @@ function parseDonationAmount(text, bid) {
   }
   return Number.isFinite(value) && value > 0 ? Math.round(value * 100) / 100 : null;
 }
-const parseTypedAmount = (str) => {
-  const n = Number(String(str).replace(/[^\d.]/g, ""));
-  return String(str).trim() && Number.isFinite(n) && n > 0 ? n : null;
-};
 
 // Temporary: a test item, visible only to coordinators, to try the donation flow.
 const TEST_BID = ["Test item (coordinators only)", "Mohan Kumar", "Anywhere", [["Mohan Kumar", 100], ["Abhishek Ranjan", 100], ["Ranjith Ravi", 100]]];
@@ -524,14 +520,34 @@ function winnerPeople() {
   return [...map.values()];
 }
 
+// Spread faces evenly along the ellipse outline so they don't bunch up when the ring is wide and short.
+function ringSpots(count, rect) {
+  const ratio = rect.width && rect.height ? rect.height / rect.width : 1;
+  const steps = 720;
+  const points = [];
+  let length = 0;
+  for (let s = 0; s <= steps; s++) {
+    const a = (-90 + (s / steps) * 360) * Math.PI / 180;
+    const p = [Math.cos(a), Math.sin(a)];
+    if (s) length += Math.hypot(p[0] - points[s - 1][0], (p[1] - points[s - 1][1]) * ratio);
+    points.push([...p, length]);
+  }
+  return Array.from({ length: count }, (_, i) => {
+    const target = ((i + 0.5) / count) * length;
+    const [cx, cy] = points.find((p) => p[2] >= target) || points[steps];
+    return [(50 + 47 * cx).toFixed(1), (50 + 47 * cy).toFixed(1)];
+  });
+}
+let heroResizeTimer;
+window.addEventListener("resize", () => { clearTimeout(heroResizeTimer); heroResizeTimer = setTimeout(renderHero, 200); });
+
 function renderHero() {
   const people = winnerPeople();
   const ring = document.querySelector("#winnerRing");
   if (ring) {
+    const spots = ringSpots(people.length, ring.getBoundingClientRect());
     ring.innerHTML = people.map(({ name, keys }, i) => {
-      const angle = (-90 + (i + 0.5) * (360 / people.length)) * Math.PI / 180;
-      const x = (50 + 47 * Math.cos(angle)).toFixed(1);
-      const y = (50 + 47 * Math.sin(angle)).toFixed(1);
+      const [x, y] = spots[i];
       const r = (i % 2 ? 1 : -1) * (3 + (i % 3) * 2);
       const done = keys.every(isDonated);
       return `<li style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" title="${escapeHtml(name)}${done ? " · donated" : ""}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span></li>`;
@@ -705,31 +721,19 @@ document.addEventListener("change", (event) => {
   renderProofThumbs(scope, all.length > room ? `You can add up to ${room} more screenshot${room === 1 ? "" : "s"}.` : "");
   added.filter((item) => scope.proofItems.includes(item)).forEach((item) => {
     readProofAmount(item.file, bid)
-      .then((value) => { item.read = value; if (!item.edited && value != null) item.amount = value; })
+      .then((value) => { item.read = value; item.amount = value; })
       .catch((err) => console.warn("Could not read the screenshot amount.", err))
       .finally(() => {
         item.reading = false;
         const i = (scope.proofItems || []).indexOf(item);
-        const input = scope.querySelector(`[data-proof-amount="${i}"]`);
-        if (i < 0 || !input) return;
-        if (!item.edited) input.value = item.amount == null ? "" : String(item.amount);
-        input.placeholder = "Amount";
-        input.closest("li")?.querySelector(".donate-thumbs__note")?.replaceChildren(document.createTextNode(item.read != null ? (item.edited ? "Edited" : "Read from screenshot. Please check.") : "Couldn't read it. Type the amount."));
+        const box = scope.querySelector(`[data-proof-amount="${i}"]`);
+        if (i < 0 || !box) return;
+        box.innerHTML = proofAmountText(item);
+        box.classList.toggle("is-empty", item.amount == null);
+        box.closest("li")?.querySelector(".donate-thumbs__note")?.replaceChildren(document.createTextNode(proofNote(item)));
         updateProofTally(scope);
       });
   });
-});
-document.addEventListener("input", (event) => {
-  const input = event.target.closest?.("[data-proof-amount]");
-  if (!input) return;
-  const scope = input.closest(".donate-inline");
-  const item = scope?.proofItems?.[Number(input.dataset.proofAmount)];
-  if (!item) return;
-  item.amount = parseTypedAmount(input.value);
-  item.edited = true;
-  const note = input.closest("li")?.querySelector(".donate-thumbs__note");
-  if (note && item.read != null) note.textContent = item.amount === item.read ? "Read from screenshot. Please check." : "Edited";
-  updateProofTally(scope);
 });
 
 function proofCheck(scope) {
@@ -741,7 +745,7 @@ function proofCheck(scope) {
   const base = { ready: false, partial: false, total, bid, legacy, message: "" };
   if (!items.length) return base;
   if (items.some((item) => item.amount == null && item.reading)) return { ...base, message: "Reading the amounts from your screenshots…" };
-  if (items.some((item) => item.amount == null)) return { ...base, message: "Add the amount paid for each screenshot." };
+  if (items.some((item) => item.amount == null)) return { ...base, message: "We couldn't read the amount on a screenshot. Remove it and upload a clearer one of the Benevity receipt." };
   if (!legacy && bid && total < bid) return { ...base, ready: true, partial: true, message: `${formatBidRupees(bid - total)} still to go. You can submit these now and upload the rest later.` };
   return { ...base, ready: true };
 }
@@ -759,12 +763,14 @@ function updateProofTally(scope) {
   submit.textContent = items.length > 1 ? `Submit ${items.length} screenshots` : "Submit donation proof";
 }
 
+const proofNote = (item) => (item.reading ? "Reading amount…" : item.amount != null ? "Amount from screenshot" : "Couldn\'t read the amount. Remove it and upload a clearer screenshot.");
+const proofAmountText = (item) => (item.amount != null ? formatBidRupees(item.amount) : item.reading ? '<i class="donate-thumbs__spin" aria-hidden="true"></i>' : "—");
 function renderProofThumbs(scope, warning = "") {
   const items = scope.proofItems || [];
   const files = items.map((item) => item.file);
   const list = scope.querySelector("[data-proof-thumbs]");
   list.querySelectorAll("img").forEach((img) => URL.revokeObjectURL(img.src));
-  list.innerHTML = files.map((file, i) => `<li><img src="${URL.createObjectURL(file)}" alt=""><span>${escapeHtml(file.name)}<em class="donate-thumbs__note">${items[i].reading && items[i].amount == null ? "Reading amount…" : items[i].read != null ? (items[i].edited && items[i].amount !== items[i].read ? "Edited" : "Read from screenshot. Please check.") : "Type the amount."}</em></span><label class="donate-thumbs__amount"><i aria-hidden="true">₹</i><input type="text" inputmode="decimal" autocomplete="off" data-proof-amount="${i}" aria-label="Amount paid in ${escapeHtml(file.name)}" placeholder="${items[i].reading && items[i].amount == null ? "…" : "Amount"}" value="${items[i].amount == null ? "" : items[i].amount}"></label><button type="button" class="donate-upload__clear" data-proof-remove="${i}" aria-label="Remove ${escapeHtml(file.name)}">×</button></li>`).join("");
+  list.innerHTML = files.map((file, i) => `<li><img src="${URL.createObjectURL(file)}" alt=""><span>${escapeHtml(file.name)}<em class="donate-thumbs__note">${proofNote(items[i])}</em></span><b class="donate-thumbs__amount${items[i].amount == null ? " is-empty" : ""}" data-proof-amount="${i}" aria-label="Amount paid">${proofAmountText(items[i])}</b><button type="button" class="donate-upload__clear" data-proof-remove="${i}" aria-label="Remove ${escapeHtml(file.name)}">×</button></li>`).join("");
   list.hidden = !files.length;
   scope.querySelector(".donate-upload").hidden = files.length >= MAX_PROOFS;
   scope.querySelector("[data-proof-label]").innerHTML = files.length ? PROOF_LABEL_MORE : PROOF_LABEL_EMPTY;
