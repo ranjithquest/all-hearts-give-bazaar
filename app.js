@@ -1,7 +1,7 @@
 const LOT_KEY_PREFIX = "give-bazaar-lot-";
 const DRAFT_KEY = "give-bazaar-draft";
 const STORAGE_REFRESH_INTERVAL = 30000;
-const LOT_LIMIT = 15;
+const LOT_LIMIT = 16;
 
 const categoryDetails = {
   experiences: { label: "Experiences", glyph: "🎨", color: "#ff8a7f" },
@@ -251,6 +251,29 @@ const seedContributions = [
   }
 ];
 
+const LOT_LETTER_PATTERNS = [
+  ["A", /beaded flower/], ["B", /post ?cards/], ["C", /chapter zero/], ["D", /what still matters/],
+  ["E", /debangshu/], ["F", /lifafa/], ["G", /north indian dinner/], ["H", /weekend getaway/],
+  ["I", /raceverse/], ["J", /bengaluru book|namma bengaluru/], ["K", /pickleball/], ["L", /drifting/],
+  ["M", /hot wheels (mystery )?box/], ["N", /photo ?shoot/], ["O", /bird photowalk/], ["P", /bowling/],
+];
+const lotLetter = (title = "") => LOT_LETTER_PATTERNS.find(([, re]) => re.test(String(title).toLowerCase()))?.[0] || "";
+const EVENT_EXTRA_LOTS = [{
+  id: "event-lot-m-hot-wheels-box",
+  title: "Hot Wheels box",
+  category: "collectibles",
+  type: "Item",
+  city: "Bengaluru",
+  description: "Looking to add some thrill to your die-cast collection or grab an easy gift? Pick up a mystery assortment of 5 mainline Hot Wheels cars. Ideal for track racing, unboxing fun, or kickstarting a collection. 5 randomly selected, carded mainline Hot Wheels cars.",
+  contributor: "Ramanuj Nanhoriya",
+  avatarEmail: "rnanhoriya@microsoft.com",
+  quantity: 2,
+  startingBid: 800,
+  images: [{ url: "hot-wheels-box.jpg" }],
+  status: "approved",
+  createdAt: "2026-10-23T08:00:00.000Z",
+}];
+
 const seedStartingBids = [2256, 1000, 800, 1500, 1500, 5000, 2169, 3000, 1200, 1499, 900, 1000];
 seedContributions.forEach((item, index) => {
   item.lotNumber = index + 1;
@@ -392,8 +415,12 @@ async function readSharedContributions() {
 function mergeStoredContributions(sharedContributions, draft) {
   const sharedIds = new Set(sharedContributions.map((item) => item.id));
   const viewerDraft = normalizeContribution(draft);
+  const extras = EVENT_EXTRA_LOTS
+    .filter((extra) => !sharedContributions.some((item) => item.id === extra.id || lotLetter(item.title) === lotLetter(extra.title)))
+    .map((extra) => normalizeContribution(structuredClone(extra)));
   contributions = [
     ...sharedContributions,
+    ...extras,
     ...structuredClone(seedContributions)
   ];
 }
@@ -578,6 +605,9 @@ function renderBoard() {
     .filter((item) => activeCity === "all" || item.city === activeCity || item.city === ALL_LOCATIONS)
     .sort((a, b) => {
       if ((a.status === "draft") !== (b.status === "draft")) return a.status === "draft" ? -1 : 1;
+      const letterA = lotLetter(a.title) || "~";
+      const letterB = lotLetter(b.title) || "~";
+      if (letterA !== letterB) return letterA.localeCompare(letterB);
       return String(b.createdAt || "").localeCompare(String(a.createdAt || ""))
         || (b.slotNumber || 0) - (a.slotNumber || 0);
     });
@@ -811,7 +841,7 @@ function createTableRowMarkup(item) {
 
   return `
     <tr class="${item.status === "draft" ? "is-draft" : ""}">
-      <td data-label="Lot"><span class="table-lot-number ${item.status === "draft" ? "table-lot-number--pending" : ""}">${item.status === "draft" ? "DRAFT" : (item.isExample ? "EG" : `#${escapeHtml(item.slotNumber || "—")}`)}</span></td>
+      <td data-label="Lot"><span class="table-lot-number ${item.status === "draft" ? "table-lot-number--pending" : ""}">${item.status === "draft" ? "DRAFT" : (item.isExample ? "EG" : escapeHtml(lotLetter(item.title) || `#${item.slotNumber || "—"}`))}</span></td>
       <td data-label="Contribution">
         <div class="table-contribution">
           <div class="table-contribution__visual" style="--row-color:${category.color}">${visual}</div>
