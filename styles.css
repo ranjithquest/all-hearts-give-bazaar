@@ -4099,7 +4099,7 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 }
 
 .joy-title {
-  margin: 0 auto 10px; font-family: var(--font-display); font-weight: 800;
+  margin: clamp(28px, 4vw, 56px) auto clamp(16px, 2vw, 28px); font-family: var(--font-display); font-weight: 800;
   font-size: clamp(34px, 4.6vw, 64px); line-height: 1.05; letter-spacing: -.02em; color: var(--ink); text-align: center;
 }
 .joy-title em { font-style: italic; color: var(--teal); }
