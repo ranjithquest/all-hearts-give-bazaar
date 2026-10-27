@@ -2024,7 +2024,8 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
   padding: clamp(145px, 11vw, 168px) clamp(72px, 7vw, 112px) clamp(72px, 7vw, 112px);
 }
 .auction-dialog.is-slide-preview .auction-details {
-  min-height: 0;
+  /* auto lets the envelope grow past its aspect ratio when the text is long */
+  min-height: auto;
   aspect-ratio: 1.2 / 1;
 }
 .auction-dialog.is-slide-preview .auction-visual {
