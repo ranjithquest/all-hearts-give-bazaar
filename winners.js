@@ -203,11 +203,22 @@ function buildEntries() {
   return entries.sort((a, b) => letterOf(a).localeCompare(letterOf(b)));
 }
 
+let winnersView = "all";
+
 function renderWinners(query = document.querySelector("#winnerSearch")?.value || "") {
   const list = document.querySelector("#winnersList");
   if (!list) return;
   const q = query.trim().toLowerCase();
-  const rows = buildEntries().filter(({ lot, bid }) => !q
+  const entries = buildEntries();
+  const mineEntries = entries.filter(({ lot, bid }) => (bid?.[3] || []).some(([n]) => isViewer(n)));
+  const viewBox = document.querySelector("#winnersView");
+  if (viewBox) {
+    viewBox.hidden = !mineEntries.length;
+    if (!mineEntries.length) winnersView = "all";
+    viewBox.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === winnersView)));
+    document.querySelector("#myItemsCount").textContent = `(${mineEntries.length})`;
+  }
+  const rows = (winnersView === "mine" ? mineEntries : entries).filter(({ lot, bid }) => !q
     || (q.length === 1 && lotLetter(lot?.title || bid?.[0]).toLowerCase() === q)
     || [lot?.title, lot?.contributor, bid?.[0], bid?.[1], ...(bid?.[3] || []).map(([n]) => n)]
       .some((text) => String(text || "").toLowerCase().includes(q)));
@@ -254,7 +265,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
 }
 
 
-const ORGANISERS_LINE = "the organising team (Abhishek, Mohan and Ranjith)";
+const ORGANISERS_LINE = "the organising team (Mohan, Abhishek and Ranjith)";
 const ORGANISERS_LINE_CAP = ORGANISERS_LINE[0].toUpperCase() + ORGANISERS_LINE.slice(1);
 
 function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = true }) {
@@ -537,6 +548,8 @@ document.addEventListener("click", (event) => {
   }
   const submit = event.target.closest("[data-proof-submit]");
   if (submit) return submitProof(submit.dataset.proofSubmit, submit.closest(".donate-inline"));
+  const view = event.target.closest("#winnersView [data-view]")?.dataset.view;
+  if (view) { winnersView = view; renderWinners(); return; }
   const filter = event.target.closest("button[data-filter]")?.dataset.filter;
   if (filter) {
     const search = document.querySelector("#winnerSearch");

@@ -3711,6 +3711,11 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
   border: 2px solid rgba(61, 61, 61, .6);
   border-radius: 999px;
 }
+.winners-view { display: inline-flex; padding: 4px; gap: 4px; background: #fffaf0; border: 2px solid rgba(61, 61, 61, .6); border-radius: 999px; }
+.winners-view[hidden] { display: none; }
+.winners-view button { padding: 7px 16px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); background: none; border: 0; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.winners-view button[aria-pressed="true"] { color: #fff; background: var(--teal); }
+.winners-view button span { font-weight: 500; opacity: .8; }
 .winners-search input:focus { outline: 3px solid rgba(207, 4, 59, .3); border-color: var(--teal); }
 .winners-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
 .winner-card {
