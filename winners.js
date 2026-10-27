@@ -160,7 +160,7 @@ function viewerEmail() {
 const PROOF_LABEL_EMPTY = `<strong><u>Browse file</u> or drag and drop</strong><small>Your Benevity payment screenshot (PNG or JPG)</small>`;
 
 // Temporary: a test item, visible only to coordinators, to try the donation flow.
-const TEST_BID = ["Test item (coordinators only)", "Mohan Kumar", "Anywhere", [["Mohan Kumar", 100], ["Abhishek Ranjan", 100]]];
+const TEST_BID = ["Test item (coordinators only)", "Mohan Kumar", "Anywhere", [["Mohan Kumar", 100], ["Abhishek Ranjan", 100], ["Ranjith Ravi", 100]]];
 const isTestBid = (bid) => bid === TEST_BID;
 
 const COORDINATORS = ["abhisranjan@microsoft.com", "mgangappa@microsoft.com", "ranjithravi@microsoft.com"];
