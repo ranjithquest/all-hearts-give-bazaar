@@ -293,7 +293,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
     <article class="winner-card${winners.length ? "" : " winner-card--open"}">
       <div class="winner-card__top" role="button" tabindex="0" data-preview="${escapeHtml(title)}" aria-label="Preview ${escapeHtml(title)}">
         ${letter ? `<span class="winner-card__letter" aria-label="Item ${letter}">${letter}</span>` : ""}
-        ${photo ? `<img class="winner-card__photo" src="${escapeHtml(photo)}" alt="" loading="lazy">` : `<span class="winner-card__photo winner-card__photo--empty" aria-hidden="true">♥</span>`}
+        <span class="winner-card__visual">${photo ? `<img class="winner-card__photo" src="${escapeHtml(photo)}" alt="" loading="lazy">` : `<span class="winner-card__photo winner-card__photo--empty" aria-hidden="true">♥</span>`}${total ? `<span class="raised-sticker" aria-label="${formatBidRupees(total)} raised">${formatBidRupees(total)}<small>raised</small></span>` : ""}</span>
         <div class="winner-card__item">
           <strong>${escapeHtml(title)}</strong>
           <span class="winner-card__by">${avatar(by, byEmail)}${escapeHtml(by)}${city ? ` · ${escapeHtml(city)}` : ""}</span>
@@ -316,7 +316,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
           return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}${mine ? " is-mine" : ""}"><span>${avatar(name)}${escapeHtml(name)}${mine ? `<em class="you-tag">You</em>` : ""}</span><b>${formatBidRupees(amount)}</b>${action}</li>${open ? `<li class="donate-inline">${donationPanel({ key, letter, title, by, byEmail, name, amount, mine })}</li>` : ""}`;
         }).join("")}
       </ul>
-      <p class="winner-card__total">${winners.length > 1 ? `${winners.length} winners · ` : ""}${formatBidRupees(total)} raised</p>`
+      `
       : `<p class="winner-card__none">No winning bid this time</p>`}
     </article>`;
   }).join("");
@@ -601,6 +601,9 @@ function openPreview(title) {
   $("auctionRuleLabel").textContent = winners.length ? "WON BY" : "RESULT";
   $("auctionWonBy").textContent = winners.length ? winners.map(([n]) => n).join(", ") : "No winning bid";
   const visual = $("auctionVisual");
+  const raised = winners.reduce((sum, [, amount]) => sum + amount, 0);
+  visual.querySelector(".raised-sticker")?.remove();
+  if (raised) visual.insertAdjacentHTML("beforeend", `<span class="raised-sticker raised-sticker--preview">Raised ${formatBidRupees(raised)}${winners.length > 1 ? ` <small>× ${winners.length} bids</small>` : ""}</span>`);
   visual.style.background = CATEGORY_COLORS[lot?.category] || CATEGORY_COLORS.experiences;
   visual.querySelector(".auction-gallery")?.remove();
   const photos = lot ? lotImages(lot).map(lotImageUrl).filter(Boolean) : [];

@@ -4177,3 +4177,19 @@ img.is-img-broken {
 .donate-thumbs__spin { width: 18px; height: 18px; border: 2px solid #e4d5b7; border-top-color: var(--teal); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 520px) { .winner-card__bids .donate-thumbs .donate-thumbs__amount { width: auto; } }
+/* Amount raised sticker (same style as last year's "sold for" tags) */
+.winner-card__visual { position: relative; display: block; padding-bottom: 14px; }
+.raised-sticker {
+  position: absolute; z-index: 3; left: 50%; bottom: 0;
+  display: grid; justify-items: center; min-width: 74px; padding: 4px 9px 3px;
+  border: 2px solid #3d3d3d; border-radius: 12px; color: #3d3d3d; background: #f9d87d;
+  box-shadow: 2px 2px 0 #3d3d3d; font-size: 14px; font-weight: 800; line-height: 1.05; white-space: nowrap;
+  transform: translateX(-50%) rotate(-4deg);
+}
+.raised-sticker small { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+.raised-sticker--preview {
+  left: 22px; bottom: 22px; display: block; min-width: 0; padding: .3em .6em; border-width: 3px; border-radius: 999px;
+  box-shadow: 4px 4px 0 #3d3d3d; font-size: clamp(18px, 2.4vw, 30px); transform: rotate(-3deg);
+}
+.raised-sticker--preview small { font-size: .55em; letter-spacing: 0; text-transform: none; }
+@media (max-width: 760px) { .raised-sticker--preview { left: 12px; bottom: 12px; border-width: 2px; box-shadow: 3px 3px 0 #3d3d3d; } }
