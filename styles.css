@@ -4146,3 +4146,15 @@ img.is-img-broken {
   .winner-card__bids .donate-thumbs .donate-thumbs__amount { width: 100%; }
   .donate-thumbs .donate-upload__clear { top: 34px; }
 }
+/* Partial donations, upload more, remove saved screenshots */
+.donate-status--partial { color: #9a5b00; background: #fdf0d8; }
+.winner-card__bids .donate-tally.is-partial { background: #fdf0d8; color: #9a5b00; }
+.donate-proof-wrap { position: relative; display: inline-flex; align-items: center; }
+.donate-proof__remove { display: grid; place-items: center; width: 22px; height: 22px; margin-left: 6px; padding: 0; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .08); color: #7a6a55; font: inherit; font-size: 15px; line-height: 1; cursor: pointer; }
+.donate-proof__remove:hover { background: #fde8e4; color: #b3261e; }
+.donate-proof__remove:disabled { opacity: .5; cursor: wait; }
+.donate-done--partial h4 { margin-top: 0; }
+.donate-done .donate-more { width: auto; padding: 12px 22px; }
+.winner-card__bids .donate-saved { margin: 0 0 10px; font-size: 13px; color: #7a6a55; text-align: left; }
+.donate-saved .donate-link { margin: 0 0 0 4px; padding: 0; font-size: 13px; }
+.donate-done.donate-done--partial { background: #fff8ec; border-color: #f1dcb4; }
