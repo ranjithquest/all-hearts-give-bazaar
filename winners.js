@@ -332,7 +332,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
   const first = name.split(" ")[0];
   const byFirst = String(by).split(/[ ,]/)[0];
   const state = donationState(key);
-  const canEdit = mine || isCoordinator();
+  const canEdit = mine;
   if (state.record && !panelReplacing) {
     const proofs = proofList(record).map(lotImageUrl);
     const amounts = Array.isArray(record.amounts) ? record.amounts : [];
