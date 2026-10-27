@@ -196,10 +196,16 @@ function readProofAmount(file, bid) {
   const job = ocrQueue.then(async () => {
     const worker = await ocrWorker();
     const { data } = await worker.recognize(file);
-    return parseDonationAmount(data?.text || "", bid);
+    return { amount: parseDonationAmount(data?.text || "", bid), recipient: parseRecipient(data?.text || "") };
   });
   ocrQueue = job.catch(() => {});
   return job;
+}
+// The cause name sits on the "Recipient" row of the Benevity receipt.
+function parseRecipient(text) {
+  const line = String(text).split(/\n/).find((l) => /^\s*Recipient\b/i.test(l));
+  const name = line?.replace(/^\s*Recipient\s*/i, "").replace(/[|_~]+/g, " ").replace(/\s+/g, " ").trim();
+  return name && /[a-z]{2}/i.test(name) ? name.slice(0, 80) : null;
 }
 function parseDonationAmount(text, bid) {
   const flat = String(text).replace(/\s+/g, " ");
@@ -463,7 +469,8 @@ async function submitProof(key, scope) {
     const allProofs = [...oldProofs, ...proofs];
     const amounts = [...oldAmounts, ...items.map((item) => item.amount)];
     const readAmounts = [...oldRead, ...items.map((item) => (item.read == null ? null : item.read))];
-    const record = { ...info, proof: allProofs[0], proofs: allProofs, amounts, readAmounts, total: amounts.reduce((a, b) => a + (b || 0), 0), ...(legacy ? { legacy: true } : {}), submittedBy: old?.submittedBy || vibeStorage.viewerEmail || "", at: old?.at || new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const recipients = [...oldProofs.map((_, i) => old?.recipients?.[i] ?? null), ...items.map((item) => item.recipient || null)];
+    const record = { ...info, proof: allProofs[0], proofs: allProofs, amounts, readAmounts, recipients, total: amounts.reduce((a, b) => a + (b || 0), 0), ...(legacy ? { legacy: true } : {}), submittedBy: old?.submittedBy || vibeStorage.viewerEmail || "", at: old?.at || new Date().toISOString(), updatedAt: new Date().toISOString() };
     await vibeStorage.shared.set(DONATION_KEY_PREFIX + key, record);
     donations.set(key, record);
     if (!wasDone && isDonated(key)) notifyTeams(info, info.byEmail);
@@ -495,7 +502,7 @@ async function deleteSavedProof(key, index, button) {
       donations.delete(key);
     } else {
       const keep = (list) => (Array.isArray(list) ? list.filter((_, i) => i !== index) : list);
-      const next = { ...old, proofs: keep(proofs), amounts: keep(old.amounts), readAmounts: keep(old.readAmounts), updatedAt: new Date().toISOString() };
+      const next = { ...old, proofs: keep(proofs), amounts: keep(old.amounts), readAmounts: keep(old.readAmounts), recipients: keep(old.recipients), updatedAt: new Date().toISOString() };
       next.proof = next.proofs[0];
       if (Array.isArray(next.amounts)) next.total = next.amounts.reduce((a, b) => a + (Number(b) || 0), 0);
       if (next.legacy && next.amounts?.every((a) => a == null)) { delete next.amounts; delete next.readAmounts; delete next.total; delete next.legacy; }
@@ -548,6 +555,16 @@ window.addEventListener("resize", () => { clearTimeout(heroResizeTimer); heroRes
 
 const FACE_CARD_ART = `<img class="face-card__art" src="heart-sparkle.png" alt="" aria-hidden="true">`;
 
+const listJoin = (list) => (list.length < 2 ? list.join("") : `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`);
+function personCauses(keys) {
+  const seen = new Map();
+  keys.forEach((key) => (donations.get(key)?.recipients || []).forEach((name) => {
+    const clean = String(name || "").trim();
+    if (clean && !seen.has(clean.toLowerCase())) seen.set(clean.toLowerCase(), clean);
+  }));
+  return [...seen.values()];
+}
+
 function renderHero() {
   const people = winnerPeople();
   const ring = document.querySelector("#winnerRing");
@@ -560,8 +577,9 @@ function renderHero() {
       const bids = keys.map(findBid).filter(Boolean);
       const total = bids.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
       const items = bids.map((b) => b.letter ? `#${b.letter}` : "").filter(Boolean).join(", ");
-      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong><small>${bids.length} item${bids.length === 1 ? "" : "s"} won${items ? ` · ${items}` : ""}</small></div>`;
-      return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${bids.length} item${bids.length === 1 ? "" : "s"} won">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
+      const causes = personCauses(keys);
+      const card = `<div class="face-card${Number(y) < 50 ? " face-card--below" : ""}" role="tooltip">${FACE_CARD_ART}<strong>${escapeHtml(name)}</strong>${causes.length ? `<small class="face-card__cause">Supported <em>${escapeHtml(listJoin(causes))}</em></small>` : `<small>${bids.length} item${bids.length === 1 ? "" : "s"} won${items ? ` · ${items}` : ""}</small>`}</div>`;
+      return `<li tabindex="0" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" aria-label="${escapeHtml(name)}: ${causes.length ? `supported ${escapeHtml(listJoin(causes))}` : `${bids.length} item${bids.length === 1 ? "" : "s"} won`}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span>${card}</li>`;
     }).join("");
   }
   const counter = document.querySelector("#donatedCount");
@@ -742,7 +760,7 @@ document.addEventListener("change", (event) => {
   renderProofThumbs(scope, all.length > room ? `You can add up to ${room} more screenshot${room === 1 ? "" : "s"}.` : "");
   added.filter((item) => scope.proofItems.includes(item)).forEach((item) => {
     readProofAmount(item.file, bid)
-      .then((value) => { item.read = value; item.amount = value; })
+      .then(({ amount, recipient }) => { item.read = amount; item.amount = amount; item.recipient = recipient; })
       .catch((err) => console.warn("Could not read the screenshot amount.", err))
       .finally(() => {
         item.reading = false;
@@ -805,7 +823,7 @@ loadBoardLots();
 const faceConfetti = (() => {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return () => {};
   let gl, canvas, prog, buf, parts = [], raf = 0, last = 0;
-  const COLORS = [[0.91, 0.09, 0.23], [0.97, 0.79, 0.27], [0.36, 0.57, 0.88], [0.18, 0.62, 0.36], [0.95, 0.22, 0.57], [1, 0.98, 0.94]];
+  const COLORS = [[0.96, 0.52, 0.62], [0.99, 0.76, 0.48], [0.58, 0.72, 0.95], [0.55, 0.82, 0.68], [0.78, 0.62, 0.93], [0.98, 0.64, 0.56]];
   function init() {
     canvas = document.createElement("canvas");
     canvas.className = "face-confetti";
@@ -815,12 +833,12 @@ const faceConfetti = (() => {
     if (!gl) return false;
     const sh = (type, src) => { const x = gl.createShader(type); gl.shaderSource(x, src); gl.compileShader(x); return x; };
     prog = gl.createProgram();
-    gl.attachShader(prog, sh(gl.VERTEX_SHADER, `attribute vec2 p;attribute vec4 a;attribute vec3 c;uniform vec2 v;varying vec4 va;varying vec3 vc;
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, `attribute vec2 p;attribute vec4 a;attribute vec4 c;uniform vec2 v;varying vec4 va;varying vec4 vc;
       void main(){gl_Position=vec4(p/v*2.0-1.0,0,1);gl_Position.y*=-1.0;gl_PointSize=a.x;va=a;vc=c;}`));
-    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float;varying vec4 va;varying vec3 vc;
-      void main(){vec2 q=gl_PointCoord-.5;float s=sin(va.y),k=cos(va.y);q=vec2(k*q.x-s*q.y,s*q.x+k*q.y);q.x/=max(abs(cos(va.z)),.15);
-        if(va.w>.5){vec2 h=q*2.2;h.y=-h.y+.25;float d=pow(h.x*h.x+h.y*h.y-.25,3.)-h.x*h.x*h.y*h.y*h.y;if(d>0.)discard;}
-        else if(abs(q.x)>.22||abs(q.y)>.42)discard;gl_FragColor=vec4(vc,1);}`));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, `precision mediump float;varying vec4 va;varying vec4 vc;
+      void main(){vec2 q=gl_PointCoord-.5;float s=sin(va.y),k=cos(va.y);q=vec2(k*q.x-s*q.y,s*q.x+k*q.y);if(va.w>1.5){vec2 r=abs(q)*2.;float d=pow(r.x,.5)+pow(r.y,.5);if(d>1.)discard;}
+        else if(va.w>.5){q.x/=max(abs(cos(va.z*.5)),.55);vec2 h=q*2.2;h.y=-h.y+.25;float d=pow(h.x*h.x+h.y*h.y-.25,3.)-h.x*h.x*h.y*h.y*h.y;if(d>0.)discard;}
+        else{q.x/=max(abs(cos(va.z)),.15);if(abs(q.x)>.22||abs(q.y)>.42)discard;}gl_FragColor=vec4(vc.rgb,vc.a);}`));
     gl.linkProgram(prog);
     gl.useProgram(prog);
     buf = gl.createBuffer();
@@ -836,15 +854,16 @@ const faceConfetti = (() => {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     parts = parts.filter((q) => (q.life -= dt) > 0 && q.y < h + 40);
-    const data = new Float32Array(parts.length * 9);
+    const data = new Float32Array(parts.length * 10);
     parts.forEach((q, i) => {
-      q.vx *= 0.985; q.vy = q.vy * 0.985 + 900 * dt; q.x += q.vx * dt + Math.sin(q.spin * 0.7) * 0.6; q.y += q.vy * dt; q.rot += q.vr * dt; q.spin += q.vs * dt;
-      data.set([q.x * dpr, q.y * dpr, q.size * dpr * Math.min(1, q.life * 2), q.rot, q.spin, q.heart, ...q.color], i * 9);
+      q.age += dt; q.vx *= 0.97; q.vy = q.heart === 1 ? q.vy * 0.99 - 8 * dt : q.heart === 2 ? q.vy * 0.95 : q.vy * 0.97 + 45 * dt; q.x += q.vx * dt + Math.sin(q.age * q.sway + q.phase) * 0.5; q.y += q.vy * dt; q.rot += q.vr * dt; q.spin += q.vs * dt;
+      const alpha = Math.min(1, q.age * 3, q.life / 0.9) * 0.95;
+      data.set([q.x * dpr, q.y * dpr, q.size * dpr * (q.heart === 2 ? Math.max(0, Math.sin(q.age * 3.2 + q.phase)) : Math.min(1, 0.4 + q.age * 2)), q.rot, q.spin, q.heart, ...q.color, alpha], i * 10);
     });
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
-    const attr = (name, size, off) => { const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 36, off * 4); };
-    attr("p", 2, 0); attr("a", 4, 2); attr("c", 3, 6);
+    const attr = (name, size, off) => { const l = gl.getAttribLocation(prog, name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, 40, off * 4); };
+    attr("p", 2, 0); attr("a", 4, 2); attr("c", 4, 6);
     gl.uniform2f(gl.getUniformLocation(prog, "v"), canvas.width, canvas.height);
     gl.drawArrays(gl.POINTS, 0, parts.length);
     raf = parts.length ? requestAnimationFrame(frame) : 0;
@@ -853,10 +872,10 @@ const faceConfetti = (() => {
   return (rect) => {
     if (!gl && !init()) return;
     const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-    for (let i = 0; i < 70; i++) {
-      const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.3, sp = 380 + Math.random() * 520;
-      parts.push({ x: cx + (Math.random() - 0.5) * rect.width * 0.6, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, rot: Math.random() * 6.3, vr: (Math.random() - 0.5) * 12, spin: Math.random() * 6.3, vs: 6 + Math.random() * 10, size: 12 + Math.random() * 10, heart: Math.random() < 0.18 ? 1 : 0, color: COLORS[(Math.random() * COLORS.length) | 0], life: 1.6 + Math.random() * 0.8 });
-    }
+    const add = (o) => parts.push({ rot: Math.random() * 6.3, spin: Math.random() * 6.3, color: COLORS[(Math.random() * COLORS.length) | 0], phase: Math.random() * 6.3, sway: 1.2 + Math.random() * 1.2, age: -Math.random() * 0.6, ...o });
+    for (let i = 0; i < 14; i++) add({ heart: 1, x: cx + (Math.random() - 0.5) * rect.width * 0.9, y: rect.top + Math.random() * 20, vx: (Math.random() - 0.5) * 30, vy: -(55 + Math.random() * 60), vr: (Math.random() - 0.5) * 0.8, vs: 0.6, size: 30 + Math.random() * 18, life: 3 + Math.random() * 1.2 });
+    for (let i = 0; i < 12; i++) add({ heart: 2, x: rect.left - 20 + Math.random() * (rect.width + 40), y: rect.top - 30 + Math.random() * (rect.height + 50), vx: 0, vy: -10, vr: 0, vs: 0, size: 16 + Math.random() * 12, color: [0.98, 0.78, 0.36], life: 1.8 + Math.random() * 1.2 });
+    for (let i = 0; i < 14; i++) add({ heart: 0, x: cx + (Math.random() - 0.5) * rect.width * 1.2, y: rect.top - 10, vx: (Math.random() - 0.5) * 80, vy: -(60 + Math.random() * 80), vr: (Math.random() - 0.5) * 1.6, vs: 1 + Math.random() * 2, size: 9 + Math.random() * 6, life: 2.6 + Math.random() * 1 });
     if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); }
   };
 })();

@@ -4290,3 +4290,6 @@ a.donate-proof:hover .donate-proof__label { color: #145c33; }
 .face-card__status.is-done { background: #2f9e5b; color: #fff; }
 
 .face-card__art { width: 54px; height: auto; top: -28px; left: -24px; rotate: -12deg; object-fit: contain; }
+
+.face-card__cause em { display: block; margin-top: 2px; color: #c8102e; font-style: normal; font-weight: 800; font-size: 15px; }
+.raised-stage__amount { filter: url(#amount-grain); }
