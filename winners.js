@@ -164,6 +164,12 @@ const TEST_VIEWER = "ranjithravi@microsoft.com";
 const TEST_BID = ["Test item (only visible to you)", "Ranjith Ravi", "Anywhere", [["Ranjith Ravi", 100]]];
 const isTestBid = (bid) => bid === TEST_BID;
 
+const COORDINATORS = ["abhisranjan@microsoft.com", "mgangappa@microsoft.com", "ranjithravi@microsoft.com"];
+
+function isCoordinator() {
+  return COORDINATORS.includes(viewerEmail());
+}
+
 function isViewer(name, letter) {
   const me = viewerEmail();
   if (!me) return false;
