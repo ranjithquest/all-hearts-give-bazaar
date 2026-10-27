@@ -162,6 +162,12 @@ const PROOF_LABEL_EMPTY = `<strong><u>Browse file</u> or drag and drop</strong><
 // Temporary: lets the organizer test the donation flow on one winner row.
 const TEST_DONOR = { email: "ranjithravi@microsoft.com", letter: "A" };
 
+const COORDINATORS = ["abhisranjan@microsoft.com", "mgangappa@microsoft.com", "ranjithravi@microsoft.com"];
+
+function isCoordinator() {
+  return COORDINATORS.includes(viewerEmail());
+}
+
 function isViewer(name, letter) {
   const me = viewerEmail();
   if (!me) return false;
@@ -234,11 +240,12 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
           const key = donationKey(letter, name);
           const done = donations.has(key);
           const mine = isViewer(name, letter);
-          const open = mine && openPanel === key;
-          const action = mine
-            ? `<button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? "✓ Donated" : open ? "Close" : "Donate"}</button>`
+          const coordView = !mine && done && isCoordinator();
+          const open = (mine || coordView) && openPanel === key;
+          const action = mine || coordView
+            ? `<button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? `✓ Donated${isCoordinator() ? `<i class="donate-caret" aria-hidden="true">${open ? "▴" : "▾"}</i>` : ""}` : open ? "Close" : "Donate"}</button>`
             : `<span class="donate-status${done ? " donate-status--done" : ""}">${done ? "✓ Donated" : "Yet to donate"}</span>`;
-          return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}${mine ? " is-mine" : ""}"><span>${avatar(name)}${escapeHtml(name)}${mine ? `<em class="you-tag">You</em>` : ""}</span><b>${formatBidRupees(amount)}</b>${action}</li>${open ? `<li class="donate-inline">${donationPanel({ key, letter, title, by, byEmail, name, amount })}</li>` : ""}`;
+          return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}${mine ? " is-mine" : ""}"><span>${avatar(name)}${escapeHtml(name)}${mine ? `<em class="you-tag">You</em>` : ""}</span><b>${formatBidRupees(amount)}</b>${action}</li>${open ? `<li class="donate-inline">${coordView ? coordinatorDetails({ key, by, byEmail, name, amount }) : donationPanel({ key, letter, title, by, byEmail, name, amount })}</li>` : ""}`;
         }).join("")}
       </ul>
       <p class="winner-card__total">${winners.length > 1 ? `${winners.length} winners · ` : ""}${formatBidRupees(total)} raised</p>`
@@ -269,7 +276,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount }) {
         ${proof ? `<a class="donate-proof" href="${escapeHtml(proof)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(proof)}" alt="Payment screenshot">View screenshot</a>` : ""}
       </div>
       <button type="button" class="donate-link" data-replace="${escapeHtml(key)}">Upload a different screenshot</button>
-    </div>`;
+    </div>${isCoordinator() ? coordinatorDetails({ key, by, byEmail, name, amount }) : ""}`;
   }
   const causes = DONATION_CAUSES.map((c) => `<a class="donate-cause" href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(c.qr)}" alt="QR code for ${escapeHtml(c.name)}" loading="lazy"><strong>${escapeHtml(c.name)}</strong><i>Donate ↗</i></a>`).join("");
   return `<div class="donate-step">
@@ -291,6 +298,30 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount }) {
     <div class="donate-step donate-step--next">
       <h4><b>3</b>Get your gift</h4>
       <p>Once submitted, ${escapeHtml(byFirst)} will reach out to arrange it with you.</p>
+    </div>`;
+}
+
+function coordinatorDetails({ key, by, byEmail, name, amount }) {
+  const record = donations.get(key);
+  if (!record) return "";
+  const proof = lotImageUrl(record.proof);
+  const winnerEmail = emailFor(name) || (record.submittedBy || "").toLowerCase();
+  const when = record.at ? new Date(record.at).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : "";
+  const row = (label, value) => value ? `<div><dt>${label}</dt><dd>${value}</dd></div>` : "";
+  const chat = (email, who) => email ? `<a class="donate-chat" href="${escapeHtml(teamsChat(email, ""))}" target="_blank" rel="noopener noreferrer">${avatar(who, email)}Chat with ${escapeHtml(String(who).split(/[ ,]/)[0])} ↗</a>` : "";
+  return `<div class="coord-details">
+      <p class="coord-details__label">Coordinator view</p>
+      <div class="coord-details__body">
+        ${proof ? `<a class="coord-details__proof" href="${escapeHtml(proof)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(proof)}" alt="Payment screenshot from ${escapeHtml(name)}"><span>Open full screenshot ↗</span></a>` : `<p class="coord-details__noproof">No screenshot attached</p>`}
+        <dl>
+          ${row("Winner", escapeHtml(name))}
+          ${row("Bid amount", formatBidRupees(amount))}
+          ${row("Contributor", escapeHtml(by))}
+          ${row("Submitted by", escapeHtml(record.submittedBy || ""))}
+          ${row("Submitted on", escapeHtml(when))}
+        </dl>
+      </div>
+      <div class="donate-done__actions">${chat(winnerEmail, name)}${chat(byEmail, by)}</div>
     </div>`;
 }
 
@@ -355,7 +386,7 @@ function renderHero() {
       const y = (50 + 47 * Math.sin(angle)).toFixed(1);
       const r = (i % 2 ? 1 : -1) * (3 + (i % 3) * 2);
       const done = keys.every((k) => donations.has(k));
-      return `<li class="${done ? "is-done" : ""}" style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" title="${escapeHtml(name)}${done ? " · donated" : ""}">${avatar(name)}${done ? `<i class="done-tick" aria-hidden="true">✓</i>` : ""}<span>${escapeHtml(name.split(" ")[0])}</span></li>`;
+      return `<li style="--x:${x}%;--y:${y}%;--r:${r}deg;--d:${(i % 5) * 0.4}s" title="${escapeHtml(name)}${done ? " · donated" : ""}">${avatar(name)}<span>${escapeHtml(name.split(" ")[0])}</span></li>`;
     }).join("");
   }
   const counter = document.querySelector("#donatedCount");

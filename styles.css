@@ -4089,3 +4089,18 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .joy-title em { white-space: nowrap; }
 
 .flow-steps li { border-radius: 18px; }
+
+.donate-caret { margin-left: 6px; font-style: normal; font-size: 12px; }
+.coord-details { margin-top: 14px; padding: 16px; border: 1px dashed #c9b48f; border-radius: 14px; background: #fff; text-align: left; }
+.donate-inline > .coord-details:first-child { margin-top: 0; }
+.coord-details__label { margin: 0 0 12px; color: var(--ink-soft); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.coord-details__body { display: grid; gap: 14px; }
+.coord-details__proof { display: grid; gap: 6px; color: var(--teal); font-size: 13px; font-weight: 700; text-decoration: none; }
+.coord-details__proof img { width: 100%; max-height: 260px; border: 1px solid #eadfcb; border-radius: 10px; object-fit: contain; background: #f6f1e7; }
+.coord-details__noproof { margin: 0; color: var(--ink-soft); font-size: 14px; }
+.coord-details dl { display: grid; gap: 10px; margin: 0; }
+.coord-details dl div { display: grid; grid-template-columns: 104px 1fr; gap: 8px; font-size: 14px; }
+.coord-details dt { color: var(--ink-soft); }
+.coord-details dd { margin: 0; font-weight: 700; word-break: break-word; }
+.coord-details .donate-done__actions { justify-content: flex-start; gap: 8px; margin-top: 14px; }
+.coord-details .donate-chat { font-size: 13px; }
