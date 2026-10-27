@@ -3,7 +3,7 @@ const LOT_LETTER_PATTERNS = [
   ["A", /beaded flower/], ["B", /post ?cards/], ["C", /chapter zero/], ["D", /what still matters/],
   ["E", /debangshu/], ["F", /lifafa/], ["G", /north indian dinner/], ["H", /weekend getaway/],
   ["I", /raceverse/], ["J", /bengaluru book|namma bengaluru/], ["K", /pickleball/], ["L", /drifting/],
-  ["M", /hot wheels (mystery )?box/], ["N", /photo ?shoot/], ["O", /bird photowalk/], ["P", /bowling/], ["Z", /^test item/],
+  ["M", /hot wheels (mystery )?box/], ["N", /photo ?shoot/], ["O", /bird photowalk/], ["P", /bowling/],
 ];
 const lotLetter = (title = "") => LOT_LETTER_PATTERNS.find(([, re]) => re.test(String(title).toLowerCase()))?.[0] || "";
 const EVENT_EXTRA_LOTS = [{
@@ -159,10 +159,6 @@ function viewerEmail() {
 
 const PROOF_LABEL_EMPTY = `<strong><u>Browse file</u> or drag and drop</strong><small>Your Benevity payment screenshot (PNG or JPG)</small>`;
 
-// Temporary: a test item, visible only to coordinators, to try the donation flow.
-const TEST_BID = ["Test item (coordinators only)", "Mohan Kumar", "Anywhere", [["Mohan Kumar", 100], ["Abhishek Ranjan", 100]]];
-const isTestBid = (bid) => bid === TEST_BID;
-
 const COORDINATORS = ["abhisranjan@microsoft.com", "mgangappa@microsoft.com", "ranjithravi@microsoft.com"];
 
 function isCoordinator() {
@@ -188,7 +184,7 @@ function buildEntries() {
   const lots = boardLots.filter((lot) => !lot.isExample && lot.status === "approved");
   const bidByLot = new Map();
   const unmatched = [];
-  const bids = isCoordinator() ? [...WINNING_BIDS, TEST_BID] : WINNING_BIDS;
+  const bids = WINNING_BIDS;
   bids.forEach((bid) => {
     const letter = lotLetter(bid[0]);
     const lot = lots.find((item) => letter && lotLetter(item.title) === letter) || findBoardLot(bid[0], bid[1]);
@@ -318,7 +314,7 @@ function notifyTeams(info, byEmail) {
   const winnerEmail = emailFor(info.name) || viewerEmail();
   const mention = (name, email) => email ? { type: "mention", text: `<at>${name}</at>`, mentioned: { id: email, name } } : null;
   const who = (name, email) => email ? `<at>${name}</at>` : name;
-  const item = `${info.letter && info.letter !== "Z" ? `${info.letter} · ` : ""}${info.title}`;
+  const item = `${info.letter ? `${info.letter} · ` : ""}${info.title}`;
   const card = {
     $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
     type: "AdaptiveCard",
@@ -370,7 +366,7 @@ async function submitProof(key, scope) {
 
 function winnerPeople() {
   const map = new Map();
-  buildEntries().filter(({ bid }) => !isTestBid(bid)).forEach(({ lot, bid }) => {
+  buildEntries().forEach(({ lot, bid }) => {
     const letter = lotLetter(lot?.title || bid?.[0]);
     (bid?.[3] || []).forEach(([name]) => {
       const slug = winnerSlug(name);
@@ -403,7 +399,7 @@ function renderHero() {
   if (!row) return;
   const seen = new Set();
   const contributors = [];
-  buildEntries().filter(({ bid }) => !isTestBid(bid)).forEach(({ lot, bid }) => {
+  buildEntries().forEach(({ lot, bid }) => {
     const raw = String(lot?.contributor || bid?.[1] || "").split(/,|&| and /)[0].trim();
     const parts = raw.toLowerCase().split(/\s+/);
     const key = `${parts[0].slice(0, 5)} ${parts.slice(1).join(" ")}`;
