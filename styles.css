@@ -2530,7 +2530,8 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
   margin-top: 28px;
   text-align: center;
 }
-.support-team span {
+.support-team span,
+.support-team a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2540,7 +2541,11 @@ dialog::backdrop { background: rgba(61, 61, 61, .62); }
   color: var(--ink);
   font-size: 12px;
   font-weight: 800;
+  text-decoration: none;
+  transition: background .15s, border-color .15s, color .15s;
 }
+.support-team a:hover,
+.support-team a:focus-visible { color: #fff; background: var(--teal); border-color: var(--teal); }
 .support-section__cta {
   display: grid;
   grid-template-columns: auto 1fr auto;
