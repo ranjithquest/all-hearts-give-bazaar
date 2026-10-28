@@ -95,7 +95,7 @@ const WINNING_BIDS = [
   ["Drifting Session in a Mercedes", "Abhijeet Singh", "Hyderabad", [["Atharva Vankundre", 3500]]],
   ["A bird photowalk session", "Kishor Chamua", "Hyderabad", [["Abhijeet Singh", 3500]]],
   ["Set of 10 Postcards", "Saugata Pramanik", "Bangalore", [["Shveta Verma", 3000], ["Anudish", 2500], ["Vidhi Bhati", 2200]]],
-  ["A four-course North Indian dinner for 3", "Tanuja", "Bangalore", [["Shweta Ratanpura", 3000], ["Srishty Banga", 3000]]],
+  ["A four-course North Indian dinner for 3", "Tanuja", "Bangalore", [["Guneet Bhatia", 5000], ["Shweta Ratanpura", 3000], ["Srishty Banga", 3000]]],
   ["Coffee and Pickleball with Ankur", "Ankur Jhawar", "Noida", [["Aarya Kabara", 3000]]],
   ["Bowling, Bites & Bragging Rights", "Kashish Bhumbri", "Noida", [["Ankur Jhawar", 2500]]],
   ["Hot Wheels mystery Box", "Ramanuj Nanhoriya", "Bangalore", [["Adithya Holehonnur", 2500], ["Anandhi Hariharan", 2000]]],
