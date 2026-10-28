@@ -251,7 +251,7 @@ function isViewer(name, letter) {
 }
 
 function avatar(name, email = emailFor(name)) {
-  const img = email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+  const img = email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" loading="lazy" onerror="avatarRetry(this)">` : "";
   return `<span class="person-avatar" aria-hidden="true">${escapeHtml(initials(name))}${img}</span>`;
 }
 

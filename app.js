@@ -858,7 +858,7 @@ function createTableRowMarkup(item) {
       </td>
       <td data-label="Contributed by">
         <div class="table-contributor">
-          <span>${escapeHtml(initials(contributorDisplay(item)))}${(item.avatarEmail || item.email) ? `<img src="/api/avatar/${encodeURIComponent((item.avatarEmail || item.email).toLowerCase())}" alt="" loading="lazy" onerror="this.remove()">` : ""}</span>
+          <span>${escapeHtml(initials(contributorDisplay(item)))}${(item.avatarEmail || item.email) ? `<img src="/api/avatar/${encodeURIComponent((item.avatarEmail || item.email).toLowerCase())}" alt="" loading="lazy" onerror="avatarRetry(this)">` : ""}</span>
           <strong>${escapeHtml(contributorDisplay(item))}</strong>
         </div>
       </td>
@@ -921,7 +921,7 @@ function rosterName(alias) {
 function teamMembersMarkup(value) {
   return parseTeamMembers(value).map((member, index) => {
     const email = memberEmail(member);
-    return `<span class="entry-member" title="${escapeHtml(member)}"><span class="entry-member__avatar">${escapeHtml(initials(rosterName(member)))}${email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" onerror="this.remove()">` : ""}</span>${escapeHtml(rosterName(member))}<button type="button" data-remove-team-member="${index}" aria-label="Remove ${escapeHtml(member)}">×</button></span>`;
+    return `<span class="entry-member" title="${escapeHtml(member)}"><span class="entry-member__avatar">${escapeHtml(initials(rosterName(member)))}${email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" onerror="avatarRetry(this)">` : ""}</span>${escapeHtml(rosterName(member))}<button type="button" data-remove-team-member="${index}" aria-label="Remove ${escapeHtml(member)}">×</button></span>`;
   }).join("");
 }
 
@@ -992,7 +992,7 @@ function createInlineEntryMarkup() {
           <input type="hidden" data-inline-field="teamMembers" value="${escapeHtml(draft.teamMembers || "")}">
           ${mode === "you" ? `
           <div class="entry-contributor entry-contributor--you">
-            <span class="entry-contributor__avatar">${escapeHtml(initials(viewerName || "You"))}${viewerEmail ? `<img src="/api/avatar/${encodeURIComponent(viewerEmail.toLowerCase())}" alt="" onerror="this.remove()">` : ""}</span>
+            <span class="entry-contributor__avatar">${escapeHtml(initials(viewerName || "You"))}${viewerEmail ? `<img src="/api/avatar/${encodeURIComponent(viewerEmail.toLowerCase())}" alt="" onerror="avatarRetry(this)">` : ""}</span>
             <strong>${escapeHtml(viewerName || "You")}</strong>
             <button type="button" class="entry-link" data-contributor-mode="team">Change to group</button>
           </div>` : `
@@ -1407,7 +1407,7 @@ function renderAuctionItem() {
   const team = String(item.team || "").split(/[,|]/).map((m) => m.trim()).filter(Boolean);
   const people = team.length ? team.map((m) => [rosterName(m), m.includes("@") ? m.toLowerCase() : memberEmail(m)]) : [[contributorDisplay(item), String(item.avatarEmail || item.email || "").toLowerCase()]];
   const avatars = document.querySelector("#auctionContributorAvatars");
-  if (avatars) avatars.innerHTML = people.slice(0, 4).map(([name, email]) => `<span class="person-avatar" aria-hidden="true">${escapeHtml(initials(name))}${email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" onerror="this.remove()">` : ""}</span>`).join("");
+  if (avatars) avatars.innerHTML = people.slice(0, 4).map(([name, email]) => `<span class="person-avatar" aria-hidden="true">${escapeHtml(initials(name))}${email ? `<img src="/api/avatar/${encodeURIComponent(email)}" alt="" onerror="avatarRetry(this)">` : ""}</span>`).join("");
   elements.auctionDescription.textContent = item.description;
   elements.auctionLocation.textContent = item.city === "Remote" ? "Anywhere / remote" : cityLabel(item.city);
   elements.auctionQuantity.textContent = item.quantity;
@@ -1758,7 +1758,7 @@ function renderTeamSuggestions(input) {
   const matches = rosterMatches(input.value, members);
   box.innerHTML = matches.map(([name, alias], index) => `
     <button type="button" role="option" class="entry-suggest__item${index === 0 ? " is-active" : ""}" data-suggest-alias="${escapeHtml(alias)}">
-      <span class="entry-member__avatar">${escapeHtml(initials(name))}<img src="/api/avatar/${encodeURIComponent(`${alias}@microsoft.com`)}" alt="" onerror="this.remove()"></span>
+      <span class="entry-member__avatar">${escapeHtml(initials(name))}<img src="/api/avatar/${encodeURIComponent(`${alias}@microsoft.com`)}" alt="" onerror="avatarRetry(this)"></span>
       <span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(alias)}</small></span>
     </button>`).join("");
   box.hidden = !matches.length;

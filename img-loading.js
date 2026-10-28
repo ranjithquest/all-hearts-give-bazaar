@@ -57,3 +57,12 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => scan(document));
   else scan(document);
 })();
+
+// Avatar photos occasionally fail to load once; retry before falling back to initials.
+window.avatarRetry = (img) => {
+  const n = Number(img.dataset.retry || 0);
+  if (n >= 2) { img.remove(); return; }
+  img.dataset.retry = n + 1;
+  const base = img.src.split("?")[0];
+  setTimeout(() => { img.src = `${base}?r=${n + 1}`; }, 1200 * (n + 1));
+};
