@@ -4189,6 +4189,7 @@ img.is-img-broken {
 .donate-proof-wrap .donate-amount-field { display: block; width: 116px; margin: 0; }
 .donate-amount-field[hidden], [data-saved-value][hidden], [data-saved-edit-actions][hidden] { display: none; }
 .donate-proof__value { font-size: 14px; white-space: nowrap; }
+.donate-proof__manual { font-size: 12px; opacity: .75; }
 .donate-amount-edit .donate-submit { width: auto; margin: 0; padding: 10px 24px; }
 [data-saved-edit-actions] { margin-top: 12px; text-align: center; }
 .winner-card__bids .donate-thumbs .donate-thumbs__amount.is-empty { color: #b3261e; }

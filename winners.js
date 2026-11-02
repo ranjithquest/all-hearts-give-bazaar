@@ -352,13 +352,10 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     const amounts = Array.isArray(record.amounts) ? record.amounts : [];
     const total = proofTotal(record);
     const bid = state.bid || Number(amount) || 0;
-    const acceptedCommitment = !!record.commitmentAccepted;
-    const edited = isCoordinator() && (record.readAmounts || []).some((read, i) => read != null && Number(read) !== Number(amounts[i]));
-    const tally = total == null ? (state.done && bid ? `<p class="donate-tally is-ok">✓ ${formatBidRupees(bid)} of ${formatBidRupees(bid)} donated</p>` : "") : `<p class="donate-tally ${state.done ? "is-ok" : "is-partial"}">${state.done ? "✓ " : ""}${formatBidRupees(total)} of ${formatBidRupees(bid)} ${acceptedCommitment ? "committed" : "donated"}${state.partial ? ` · ${formatBidRupees(bid - total)} to go` : ""}${edited ? `<small>Amounts edited after auto-read: ${(record.readAmounts || []).map((r) => (r == null ? "—" : formatBidRupees(r))).join(", ")}</small>` : ""}</p>`;
+    const tally = total == null ? (state.done && bid ? `<p class="donate-tally is-ok">✓ ${formatBidRupees(bid)} of ${formatBidRupees(bid)} donated</p>` : "") : `<p class="donate-tally ${state.done ? "is-ok" : "is-partial"}">${state.done ? "✓ " : ""}${formatBidRupees(total)} of ${formatBidRupees(bid)} donated${state.partial ? ` · ${formatBidRupees(bid - total)} to go` : ""}</p>`;
     const head = state.done
       ? `<span class="donate-done__tick" aria-hidden="true">✓</span>
-      <h4>${escapeHtml(first)}’s ${acceptedCommitment ? "commitment is accepted" : "donation is in"}. Thank you!</h4>
-      ${acceptedCommitment ? `<p>${escapeHtml(record.commitmentNote || "Scheduled payroll commitment accepted by the organising team; payment has not yet been received.")}</p>` : ""}
+      <h4>${escapeHtml(first)}’s donation is in. Thank you!</h4>
       <p>${ORGANISERS_LINE_CAP} will coordinate with ${escapeHtml(byFirst)} to get the gift to ${mine ? "you" : escapeHtml(first)}.</p>`
       : `<h4>${mine ? "You're" : `${escapeHtml(first)}’s`} part of the way there</h4>
       <p>${mine ? `Donate the remaining ${formatBidRupees(bid - total)} on Benevity, then upload its screenshot here.` : `${escapeHtml(first)} still has ${formatBidRupees(bid - total)} to donate.`}</p>`;
@@ -370,12 +367,12 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
         <div class="donate-done__actions">
           ${proofs.map((url, i) => `<div class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}<span class="donate-proof__label">${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}</span>${url ? "</a>" : "</span>"}
             <span class="donate-proof__value" data-saved-value>${amounts[i] != null ? `· ${formatBidRupees(amounts[i])}` : ""}</span>
+            ${amounts[i] != null && (record.readAmounts?.[i] == null || Number(record.readAmounts[i]) !== Number(amounts[i])) ? `<small class="donate-proof__manual">Manual entry</small>` : ""}
             ${canEdit ? `<button type="button" class="donate-edit-icon" data-saved-edit="${i}" aria-label="Edit amount for screenshot ${i + 1}" aria-expanded="false" title="Edit amount">${EDIT_AMOUNT_ICON}</button>
             <label class="donate-amount-field" hidden><span class="sr-only">Amount in rupees for screenshot ${i + 1}</span><input type="number" min="0" step="0.01" required inputmode="decimal" value="${amounts[i] == null ? "" : escapeHtml(amounts[i])}" data-saved-amount aria-label="Amount in rupees for screenshot ${i + 1}" placeholder="Amount in ₹"></label>` : ""}
           </div>`).join("")}
         </div>
         ${canEdit && proofs.length ? `<div data-saved-edit-actions hidden>
-          <p>Enter only the amount applied to this item, excluding Microsoft's match. Use 0 for an extra screenshot of the same donation.</p>
           <button type="button" class="donate-submit" data-save-amounts="${escapeHtml(key)}">Submit</button>
         </div>` : ""}
         <p class="donate-error" data-proof-error role="alert" hidden></p>
@@ -910,7 +907,7 @@ function updateProofTally(scope) {
   submit.textContent = items.length > 1 ? `Submit ${items.length} screenshots` : "Submit donation proof";
 }
 
-const proofNote = (item) => (item.edited ? (item.amount == null ? "Enter a valid amount." : `Manually entered${item.read != null ? ` · detected ${formatBidRupees(item.read)}` : ""}`) : item.reading ? "Reading amount… or enter it manually." : item.amount != null ? "Detected amount · edit if incorrect" : "Couldn't read the amount. Enter it manually.");
+const proofNote = (item) => (item.edited ? (item.amount == null ? "Enter a valid amount." : "Manual entry") : item.reading ? "Reading amount… or enter it manually." : item.amount != null ? "Detected amount · edit if incorrect" : "Couldn't read the amount. Enter it manually.");
 function proofAmountControl(item, index) {
   if (item.editing) return `<label class="donate-thumbs__amount"><i aria-hidden="true">₹</i><input type="number" min="0" step="0.01" required inputmode="decimal" value="${item.amount ?? ""}" data-proof-amount="${index}" aria-label="Amount in rupees for screenshot ${index + 1}" placeholder="Amount"></label>`;
   const amount = item.amount != null ? formatBidRupees(item.amount) : item.reading ? '<i class="donate-thumbs__spin" aria-hidden="true"></i>' : "Not detected";
