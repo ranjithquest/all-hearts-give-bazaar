@@ -349,7 +349,6 @@ function coordinationControls(letter, lot, bid) {
   if (!marked && !allowed && !error) return "";
   return `<div class="winner-card__coordination-summary">${marked ? `<span class="winner-card__coordination-status" role="status"${markedBy ? ` title="Marked by ${escapeHtml(markerName)}" aria-label="Coordinating, marked by ${escapeHtml(markerName)}"` : ""}>${markedBy ? avatar(markerName, markedBy) : ""}<span>✓ Coordinating</span></span>` : ""}
     ${allowed ? `<button type="button" class="${marked ? "winner-card__coordination-undo" : "winner-card__chat winner-card__coordinate"}" data-coordinate="${escapeHtml(letter)}" data-coordinate-value="${!marked}"${pending ? " disabled" : ""}>${pending ? "Saving…" : marked ? "Undo" : "Mark as coordinating"}</button>` : ""}</div>
-    ${allowed && !marked ? '<small class="winner-card__chat-note">Let the organisers know you’ve started planning your gift or experience.</small>' : ""}
     ${allowed ? `<div class="winner-card__coordination-links">
       ${(marked || record?.groupUrl) && coordinationEditors.get(letter) !== "link" ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-link="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.groupUrl ? "Edit Teams group link" : "Add Teams group link"}</button>` : ""}
       ${coordinationEditors.get(letter) !== "note" ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-note="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.statusNote ? "Edit comments" : "Add comments"}</button>` : ""}
