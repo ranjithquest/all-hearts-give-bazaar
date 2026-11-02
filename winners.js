@@ -381,7 +381,7 @@ function coordinationActions(letter, lot, bid) {
   const savedUrl = teamsGroupUrl(record?.groupUrl);
   const available = !!savedUrl || (!record?.groupUrl && !missingContacts && groupEmails.length > 1);
   const label = savedUrl ? "View group" : record?.groupUrl ? "Group link unavailable" : "Let’s plan on Teams";
-  const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : `Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.`;
+  const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : `Drafts a ${groupEmails.length > 2 ? "group" : "chat"} for you on Teams.`;
   const allowed = canCoordinate(lot, bid);
   const editing = allowed && coordinationEditors.get(letter) === "link";
   const editingNote = allowed && coordinationEditors.get(letter) === "note";
