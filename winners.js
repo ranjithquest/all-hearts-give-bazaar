@@ -158,8 +158,7 @@ function viewerEmail() {
   return String((vibeStorage || window.vibehub?.storage)?.viewerEmail || "").toLowerCase();
 }
 
-const PROOF_LABEL_EMPTY = `<strong><u>Browse files</u> or drag and drop</strong><small>Your Benevity payment screenshots (PNG or JPG). Add one for each donation.</small><small>Amount not detected? Tap the pencil to enter it.</small>`;
-const PROOF_LABEL_MORE = `<strong><u>Add another screenshot</u></strong><small>Donated to more than one NGO? Add each receipt.</small><small>Amount not detected? Tap the pencil to enter it.</small>`;
+const PROOF_LABEL = `<strong><u>Browse files</u> or drag and drop</strong><small>Your Benevity payment screenshots (PNG or JPG). Add one for each donation.</small>`;
 const MAX_PROOFS = 6;
 const proofList = (record) => (record?.proofs?.length ? record.proofs : record?.proof ? [record.proof] : []);
 function canEditProof(record, index) {
@@ -399,13 +398,13 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     </div>
     <div class="donate-step">
       <h4><b>2</b>Upload your payment screenshots</h4>
-      <p>Check the detected amounts and edit them if needed. Enter only the amount applied to this item, excluding Microsoft's match.</p>
+      <p>Enter only the amount applied to this item, excluding Microsoft's match.</p>
       ${saved ? savedProofsHtml : ""}
       <ul class="donate-thumbs" data-proof-thumbs hidden></ul>
       ${saved && savedTotal != null ? `<p class="donate-tally ${savedTotal >= amount ? "is-ok" : "is-partial"}" data-proof-tally>${savedTotal >= amount ? "✓ " : ""}Total ${formatBidRupees(savedTotal)} of ${formatBidRupees(amount)}</p>` : `<p class="donate-tally" data-proof-tally hidden></p>`}
       <label class="donate-upload">
         <input type="file" accept="image/*" multiple data-proof-input>
-        <span data-proof-label>${PROOF_LABEL_EMPTY}</span>
+        <span data-proof-label>${PROOF_LABEL}</span>
       </label>
       <button type="button" class="donate-submit" data-proof-submit="${escapeHtml(key)}" ${canEdit ? `data-save-amounts="${escapeHtml(key)}"` : ""} data-bid="${Number(amount) || 0}" data-saved="${savedTotal || 0}" data-saved-count="${saved}" data-legacy="${saved && savedTotal == null ? 1 : 0}" disabled>Submit</button>
       <p class="donate-error" data-proof-error role="alert" hidden></p>
@@ -945,7 +944,7 @@ function updateProofTally(scope) {
   submit.textContent = items.length > 1 ? `Submit ${items.length} screenshots` : "Submit";
 }
 
-const proofNote = (item) => (item.edited ? (item.amount == null ? "Enter a valid amount." : "") : item.reading ? "Reading amount… or enter it manually." : item.amount != null ? "Detected amount · edit if incorrect" : "Couldn't read the amount. Enter it manually.");
+const proofNote = (item) => (item.edited ? (item.amount == null ? "Enter a valid amount." : "") : item.reading ? "Reading amount… or enter it manually." : item.amount != null ? "Edit if detected amount is incorrect" : "Couldn't read the amount. Enter it manually.");
 function proofAmountControl(item, index) {
   if (item.editing) return `<label class="donate-thumbs__amount"><i aria-hidden="true">₹</i><input type="number" min="0" step="0.01" required inputmode="decimal" value="${item.amount ?? ""}" data-proof-amount="${index}" aria-label="Amount in rupees for screenshot ${index + 1}" placeholder="Amount"></label>`;
   const amount = item.amount != null ? formatBidRupees(item.amount) : item.reading ? '<i class="donate-thumbs__spin" aria-hidden="true"></i>' : "Not detected";
@@ -959,7 +958,7 @@ function renderProofThumbs(scope, warning = "") {
   list.innerHTML = files.map((file, i) => `<li><img src="${URL.createObjectURL(file)}" alt=""><span>${escapeHtml(file.name)}<em class="donate-thumbs__note">${escapeHtml(proofNote(items[i]))}</em></span><div class="donate-proof-control" data-proof-control="${i}">${proofAmountControl(items[i], i)}</div><button type="button" class="donate-upload__clear" data-proof-remove="${i}" aria-label="Remove ${escapeHtml(file.name)}">×</button></li>`).join("");
   list.hidden = !files.length;
   scope.querySelector(".donate-upload").hidden = files.length >= MAX_PROOFS;
-  scope.querySelector("[data-proof-label]").innerHTML = files.length ? PROOF_LABEL_MORE : PROOF_LABEL_EMPTY;
+  scope.querySelector("[data-proof-label]").innerHTML = PROOF_LABEL;
   const error = scope.querySelector("[data-proof-error]");
   error.textContent = warning;
   error.hidden = !warning;
