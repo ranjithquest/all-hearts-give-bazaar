@@ -3733,6 +3733,14 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
   border: 1px solid rgba(61, 61, 61, .2);
   border-radius: 14px;
 }
+.winner-card--complete {
+  background: #eef4e8;
+  border-color: #95b59f;
+  box-shadow: inset 3px 0 0 #2f9e5b;
+}
+.winner-card--complete .winner-card__bids > li:not(.is-match):not(.donate-inline) {
+  background: rgba(255, 255, 255, .6);
+}
 .winner-card__item strong { display: block; font-size: 16px; line-height: 1.25; }
 .winner-card__item span { color: var(--ink-soft); font-size: 13px; }
 .winner-card__bids { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }

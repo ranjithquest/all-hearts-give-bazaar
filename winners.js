@@ -309,10 +309,11 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
     const photo = lot ? lotImageUrl(lotImages(lot)[0]) : "";
     const winners = bid?.[3] || [];
     const letter = lotLetter(title) || lotLetter(bid?.[0]);
+    const complete = winners.length > 0 && winners.every(([name]) => isDonated(donationKey(letter, name)));
     const total = winners.reduce((sum, [, amount]) => sum + amount, 0);
     const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
     return `
-    <article class="winner-card${winners.length ? "" : " winner-card--open"}">
+    <article class="winner-card${winners.length ? "" : " winner-card--open"}${complete ? " winner-card--complete" : ""}">
       <div class="winner-card__top" role="button" tabindex="0" data-preview="${escapeHtml(title)}" aria-label="Preview ${escapeHtml(title)}">
         ${letter ? `<span class="winner-card__letter" aria-label="Item ${letter}">${letter}</span>` : ""}
         <span class="winner-card__visual">${photo ? `<img class="winner-card__photo" src="${escapeHtml(photo)}" alt="" loading="lazy">` : `<span class="winner-card__photo winner-card__photo--empty" aria-hidden="true">♥</span>`}${total ? `<span class="raised-sticker" aria-label="${formatBidRupees(total)} raised">${formatBidRupees(total)}<small>raised</small></span>` : ""}</span>
