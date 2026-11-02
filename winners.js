@@ -376,12 +376,12 @@ function coordinationActions(letter, lot, bid) {
     "Let’s coordinate your gifts or experiences here!",
   ].join("\n");
   const draftUrl = new URL("https://teams.microsoft.com/l/chat/0/0");
-  draftUrl.search = new URLSearchParams({ users: groupEmails.join(","), topicName: `GIVE Bazaar · ${title}`, message: groupMessage }).toString();
+  draftUrl.search = new URLSearchParams({ users: groupEmails.join(","), topicName: `${title} · GIVE Bazaar`, message: groupMessage }).toString();
   const record = coordination.get(letter);
   const savedUrl = teamsGroupUrl(record?.groupUrl);
   const available = !!savedUrl || (!record?.groupUrl && !missingContacts && groupEmails.length > 1);
   const label = savedUrl ? "View group" : record?.groupUrl ? "Group link unavailable" : "Let’s plan on Teams";
-  const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : `Copilot drafts a ${groupEmails.length > 2 ? "group" : "chat"} for you on Teams.`;
+  const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : `Drafts a ${groupEmails.length > 2 ? "group" : "chat"} for you on Teams.`;
   const allowed = canCoordinate(lot, bid);
   const editing = allowed && coordinationEditors.get(letter) === "link";
   const editingNote = allowed && coordinationEditors.get(letter) === "note";
