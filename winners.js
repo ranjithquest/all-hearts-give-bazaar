@@ -305,11 +305,16 @@ function canCoordinate(lot, bid) {
 }
 
 function coordinationControls(letter, lot, bid) {
-  const marked = coordination.get(letter)?.coordinating === true;
+  const record = coordination.get(letter);
+  const marked = record?.coordinating === true;
+  const markedBy = String(record?.updatedBy || "").trim().toLowerCase();
+  const markerName = STUDIO_ROSTER.find(([, alias]) => `${alias}@microsoft.com` === markedBy)?.[0]
+    || [...lotContributors(lot, lot?.contributor || bid[1]), ...bid[3].map(([name]) => [name, emailFor(name)])].find(([, email]) => email === markedBy)?.[0]
+    || markedBy;
   const pending = coordinationPending.has(letter);
   const allowed = canCoordinate(lot, bid);
   const error = coordinationErrors.get(letter);
-  return `${marked ? `<span class="winner-card__coordination-status" role="status">✓ Coordinating</span>` : ""}
+  return `${marked ? `<span class="winner-card__coordination-status" role="status"${markedBy ? ` title="Marked by ${escapeHtml(markerName)}" aria-label="Coordinating, marked by ${escapeHtml(markerName)}"` : ""}>${markedBy ? avatar(markerName, markedBy) : ""}<span>✓ Coordinating</span></span>` : ""}
     ${allowed ? `<button type="button" class="${marked ? "winner-card__coordination-undo" : "winner-card__chat winner-card__coordinate"}" data-coordinate="${escapeHtml(letter)}" data-coordinate-value="${!marked}"${pending ? " disabled" : ""}>${pending ? "Saving…" : marked ? "Undo" : "Mark as coordinating"}</button>` : ""}
     ${error ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
 }
@@ -429,8 +434,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       `
       : `<p class="winner-card__none">No winning bid this time</p>`}
       ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span><span class="winner-card__chat-actions">
-        ${!missingContacts && groupEmails.length > 1 ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(groupUrl.href)}" target="_blank" rel="noopener noreferrer" title="Open a Teams draft with all winners and contributors. Send the first message to start the chat.">Let’s plan on Teams</a>` : missingContacts && participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="Planning chat is unavailable because contact details are missing for one or more participants.">Let’s plan on Teams</span>` : ""}
-        ${!missingContacts && groupEmails.length > 1 ? `<small class="winner-card__chat-note">Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.</small>` : ""}
+        <span class="winner-card__plan-action">${!missingContacts && groupEmails.length > 1 ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(groupUrl.href)}" target="_blank" rel="noopener noreferrer" title="Open a Teams draft with all winners and contributors. Send the first message to start the chat.">Let’s plan on Teams</a><small class="winner-card__chat-note">Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.</small>` : missingContacts && participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="Planning chat is unavailable because contact details are missing for one or more participants.">Let’s plan on Teams</span>` : ""}</span>
         <span class="winner-card__coordination" data-coordination="${escapeHtml(letter)}">${coordinationControls(letter, lot, bid)}</span>
       </span></p>` : ""}
     </article>`;
