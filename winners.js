@@ -30,6 +30,8 @@ let coordination = new Map();
 const coordinationPending = new Set();
 const coordinationErrors = new Map();
 const coordinationLinkDrafts = new Map();
+const coordinationNoteDrafts = new Map();
+const coordinationEditors = new Map();
 const winnerSlug = (name) => String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const donationKey = (letter, name) => `${(letter || "x").toLowerCase()}-${winnerSlug(name)}`;
 let openPanel = "";
@@ -330,13 +332,17 @@ function teamsGroupUrl(value) {
   }
 }
 
+function coordinationPersonName(email, lot, bid) {
+  return STUDIO_ROSTER.find(([, alias]) => `${alias}@microsoft.com` === email)?.[0]
+    || [...lotContributors(lot, lot?.contributor || bid[1]), ...bid[3].map(([name]) => [name, emailFor(name)])].find(([, contact]) => contact === email)?.[0]
+    || email;
+}
+
 function coordinationControls(letter, lot, bid) {
   const record = coordination.get(letter);
   const marked = record?.coordinating === true;
   const markedBy = String(record?.markedBy || record?.updatedBy || "").trim().toLowerCase();
-  const markerName = STUDIO_ROSTER.find(([, alias]) => `${alias}@microsoft.com` === markedBy)?.[0]
-    || [...lotContributors(lot, lot?.contributor || bid[1]), ...bid[3].map(([name]) => [name, emailFor(name)])].find(([, email]) => email === markedBy)?.[0]
-    || markedBy;
+  const markerName = coordinationPersonName(markedBy, lot, bid);
   const pending = coordinationPending.has(letter);
   const allowed = canCoordinate(lot, bid);
   const error = coordinationErrors.get(letter);
@@ -344,8 +350,11 @@ function coordinationControls(letter, lot, bid) {
   return `<div class="winner-card__coordination-summary">${marked ? `<span class="winner-card__coordination-status" role="status"${markedBy ? ` title="Marked by ${escapeHtml(markerName)}" aria-label="Coordinating, marked by ${escapeHtml(markerName)}"` : ""}>${markedBy ? avatar(markerName, markedBy) : ""}<span>✓ Coordinating</span></span>` : ""}
     ${allowed ? `<button type="button" class="${marked ? "winner-card__coordination-undo" : "winner-card__chat winner-card__coordinate"}" data-coordinate="${escapeHtml(letter)}" data-coordinate-value="${!marked}"${pending ? " disabled" : ""}>${pending ? "Saving…" : marked ? "Undo" : "Mark as coordinating"}</button>` : ""}</div>
     ${allowed && !marked ? '<small class="winner-card__chat-note">Let the organisers know you’ve started planning your gift or experience.</small>' : ""}
-    ${allowed && (marked || record?.groupUrl) && !coordinationLinkDrafts.has(letter) ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-link="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.groupUrl ? "Edit group link" : "Add group link"}</button>` : ""}
-    ${error && !(allowed && coordinationLinkDrafts.has(letter)) ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
+    ${allowed ? `<div class="winner-card__coordination-links">
+      ${(marked || record?.groupUrl) && coordinationEditors.get(letter) !== "link" ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-link="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.groupUrl ? "Edit Teams group link" : "Add Teams group link"}</button>` : ""}
+      ${coordinationEditors.get(letter) !== "note" ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-note="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.statusNote ? "Edit comments" : "Add comments"}</button>` : ""}
+    </div>` : ""}
+    ${error && !(allowed && coordinationEditors.has(letter)) ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
 }
 
 function coordinationActions(letter, lot, bid) {
@@ -375,13 +384,24 @@ function coordinationActions(letter, lot, bid) {
   const label = savedUrl ? "View group" : record?.groupUrl ? "Group link unavailable" : "Let’s plan on Teams";
   const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : `Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.`;
   const allowed = canCoordinate(lot, bid);
-  const editing = allowed && coordinationLinkDrafts.has(letter);
+  const editing = allowed && coordinationEditors.get(letter) === "link";
+  const editingNote = allowed && coordinationEditors.get(letter) === "note";
   const pending = coordinationPending.has(letter);
   const error = coordinationErrors.get(letter);
+  const noteBy = String(record?.statusNoteBy || "").trim().toLowerCase();
+  const noteAuthor = coordinationPersonName(noteBy, lot, bid);
   return `<div class="winner-card__plan-action">
       ${available ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(savedUrl || draftUrl.href)}" target="_blank" rel="noopener noreferrer" title="${savedUrl ? "Open the saved Teams group." : "Open a Teams draft with all winners and contributors. Send the first message to start the chat."}">${label}</a><small class="winner-card__chat-note">${note}</small>` : participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="${record?.groupUrl ? "The saved group link needs to be updated." : "Planning chat is unavailable because contact details are missing for one or more participants."}">${label}</span>${record?.groupUrl ? `<small class="winner-card__chat-note">${note}</small>` : ""}` : ""}
     </div>
     <div class="winner-card__coordination" data-coordination="${escapeHtml(letter)}">${coordinationControls(letter, lot, bid)}</div>
+    ${record?.statusNote ? `<div class="winner-card__planning-note"><strong>Planning update</strong><p>${escapeHtml(record.statusNote)}</p>${noteBy ? `<small class="winner-card__note-author">${avatar(noteAuthor, noteBy)}Updated by ${escapeHtml(noteAuthor)}</small>` : ""}</div>` : ""}
+    ${editingNote ? `<form class="winner-card__group-form" data-coordination-note-form="${escapeHtml(letter)}" novalidate>
+      <label for="coordination-note-${letter}">Comments</label>
+      <textarea id="coordination-note-${letter}" rows="3" required data-coordinate-note-input="${escapeHtml(letter)}" placeholder="How is your planning going?" aria-describedby="coordination-note-help-${letter}${error ? ` coordination-note-error-${letter}` : ""}"${error ? ' aria-invalid="true"' : ""}${pending ? " disabled" : ""}>${escapeHtml(coordinationNoteDrafts.get(letter))}</textarea>
+      <small id="coordination-note-help-${letter}" class="winner-card__chat-note">Optional — share a planning update with everyone. This is one shared note for the item.</small>
+      <div class="winner-card__group-form-actions"><button type="submit" class="winner-card__chat"${pending ? " disabled" : ""}>${pending ? "Saving…" : "Save comments"}</button><button type="button" class="winner-card__coordination-undo" data-coordinate-note-cancel="${letter}"${pending ? " disabled" : ""}>Cancel</button>${record?.statusNote ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-note-remove="${letter}"${pending ? " disabled" : ""}>Remove comments</button>` : ""}</div>
+      ${error ? `<small id="coordination-note-error-${letter}" class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}
+    </form>` : ""}
     ${editing ? `<form class="winner-card__group-form" data-coordination-link-form="${escapeHtml(letter)}" novalidate>
       <label for="group-link-${letter}">Teams group link</label>
       <input id="group-link-${letter}" type="url" data-coordinate-link-input="${escapeHtml(letter)}" value="${escapeHtml(coordinationLinkDrafts.get(letter))}" placeholder="Paste your Teams link" aria-describedby="group-link-help-${letter}${error ? ` group-link-error-${letter}` : ""}"${error ? ' aria-invalid="true"' : ""}${pending ? " disabled" : ""}>
@@ -398,7 +418,7 @@ function refreshCoordination(letter) {
   });
 }
 
-function editCoordinationLink(letter, open) {
+function editCoordinationDetails(letter, field, open) {
   if (coordinationPending.has(letter)) return;
   const entry = buildEntries().find(({ lot, bid }) => (lotLetter(lot?.title) || lotLetter(bid[0])) === letter);
   if (!entry || !canCoordinate(entry.lot, entry.bid)) {
@@ -407,10 +427,16 @@ function editCoordinationLink(letter, open) {
     return;
   }
   coordinationErrors.delete(letter);
-  if (open) coordinationLinkDrafts.set(letter, coordination.get(letter)?.groupUrl || "");
-  else coordinationLinkDrafts.delete(letter);
+  const drafts = field === "link" ? coordinationLinkDrafts : coordinationNoteDrafts;
+  if (open) {
+    if (!drafts.has(letter)) drafts.set(letter, coordination.get(letter)?.[field === "link" ? "groupUrl" : "statusNote"] || "");
+    coordinationEditors.set(letter, field);
+  } else {
+    drafts.delete(letter);
+    coordinationEditors.delete(letter);
+  }
   refreshCoordination(letter);
-  document.querySelector(open ? `[data-coordinate-link-input="${letter}"]` : `[data-coordinate-link="${letter}"]`)?.focus({ preventScroll: true });
+  document.querySelector(open ? `[data-coordinate-${field}-input="${letter}"]` : `[data-coordinate-${field}="${letter}"]`)?.focus({ preventScroll: true });
 }
 
 function setCoordination(letter, coordinating, button) {
@@ -428,6 +454,19 @@ function saveCoordinationLink(letter, form, remove = false) {
     return;
   }
   return saveCoordination(letter, { groupUrl }, form.querySelector('button[type="submit"]'));
+}
+
+function saveCoordinationNote(letter, form, remove = false) {
+  const value = form.querySelector("[data-coordinate-note-input]").value;
+  coordinationNoteDrafts.set(letter, value);
+  const statusNote = remove ? "" : value.trim();
+  if (!remove && !statusNote) {
+    coordinationErrors.set(letter, "Add a planning update before saving.");
+    refreshCoordination(letter);
+    document.querySelector(`[data-coordinate-note-input="${letter}"]`)?.focus({ preventScroll: true });
+    return;
+  }
+  return saveCoordination(letter, { statusNote }, form.querySelector('button[type="submit"]'));
 }
 
 async function saveCoordination(letter, changes, button) {
@@ -453,18 +492,26 @@ async function saveCoordination(letter, changes, button) {
     const record = { ...old, letter, ...changes, updatedBy: viewerEmail(), updatedAt: now };
     if (changes.coordinating === true) { record.markedBy = viewerEmail(); record.markedAt = now; }
     else if (old?.coordinating && !old.markedBy && old.updatedBy) { record.markedBy = old.updatedBy; record.markedAt = old.updatedAt; }
+    if (changes.statusNote !== undefined) { record.statusNoteBy = viewerEmail(); record.statusNoteAt = now; }
     await vibeStorage.shared.set(COORDINATION_KEY_PREFIX + letter.toLowerCase(), record);
     coordination.set(letter, record);
-    if (changes.groupUrl !== undefined) coordinationLinkDrafts.delete(letter);
+    if (changes.groupUrl !== undefined) {
+      coordinationLinkDrafts.delete(letter);
+      if (coordinationEditors.get(letter) === "link") coordinationEditors.delete(letter);
+    }
+    if (changes.statusNote !== undefined) {
+      coordinationNoteDrafts.delete(letter);
+      if (coordinationEditors.get(letter) === "note") coordinationEditors.delete(letter);
+    }
   } catch (error) {
-    console.error("Could not save coordination status.", error);
-    coordinationErrors.set(letter, `Couldn't save ${changes.groupUrl !== undefined ? "the group link" : "the coordination status"}. Check your connection and try again.`);
+    console.error("Could not save coordination.", error);
+    coordinationErrors.set(letter, `Couldn't save ${changes.statusNote !== undefined ? "the comments" : changes.groupUrl !== undefined ? "the group link" : "the coordination status"}. Check your connection and try again.`);
   } finally {
     coordinationPending.delete(letter);
     refresh();
     if (document.activeElement === document.body) {
       const scope = document.querySelector(`[data-coordination-actions="${letter}"]`);
-      scope?.querySelector(`[data-coordinate-link-input], ${changes.groupUrl !== undefined ? ".winner-card__group" : "[data-coordinate]"}`)?.focus({ preventScroll: true });
+      scope?.querySelector(`[data-coordinate-link-input], [data-coordinate-note-input], ${changes.statusNote !== undefined ? "[data-coordinate-note]" : changes.groupUrl !== undefined ? ".winner-card__group" : "[data-coordinate]"}`)?.focus({ preventScroll: true });
     }
   }
 }
@@ -1007,11 +1054,17 @@ document.addEventListener("keydown", (event) => {
 });
 document.addEventListener("click", (event) => {
   const editLink = event.target.closest("[data-coordinate-link]");
-  if (editLink) return editCoordinationLink(editLink.dataset.coordinateLink, true);
+  if (editLink) return editCoordinationDetails(editLink.dataset.coordinateLink, "link", true);
   const cancelLink = event.target.closest("[data-coordinate-link-cancel]");
-  if (cancelLink) return editCoordinationLink(cancelLink.dataset.coordinateLinkCancel, false);
+  if (cancelLink) return editCoordinationDetails(cancelLink.dataset.coordinateLinkCancel, "link", false);
   const removeLink = event.target.closest("[data-coordinate-link-remove]");
   if (removeLink) return saveCoordinationLink(removeLink.dataset.coordinateLinkRemove, removeLink.closest("form"), true);
+  const editNote = event.target.closest("[data-coordinate-note]");
+  if (editNote) return editCoordinationDetails(editNote.dataset.coordinateNote, "note", true);
+  const cancelNote = event.target.closest("[data-coordinate-note-cancel]");
+  if (cancelNote) return editCoordinationDetails(cancelNote.dataset.coordinateNoteCancel, "note", false);
+  const removeNote = event.target.closest("[data-coordinate-note-remove]");
+  if (removeNote) return saveCoordinationNote(removeNote.dataset.coordinateNoteRemove, removeNote.closest("form"), true);
   const coordinate = event.target.closest("[data-coordinate]");
   if (coordinate) return setCoordination(coordinate.dataset.coordinate, coordinate.dataset.coordinateValue === "true", coordinate);
   const preview = event.target.closest("[data-preview]");
@@ -1105,6 +1158,11 @@ document.addEventListener("click", (event) => {
   }
 });
 document.addEventListener("submit", (event) => {
+  if (event.target.matches("[data-coordination-note-form]")) {
+    event.preventDefault();
+    if (!coordinationPending.has(event.target.dataset.coordinationNoteForm)) saveCoordinationNote(event.target.dataset.coordinationNoteForm, event.target);
+    return;
+  }
   if (!event.target.matches("[data-coordination-link-form]")) return;
   event.preventDefault();
   if (!coordinationPending.has(event.target.dataset.coordinationLinkForm)) saveCoordinationLink(event.target.dataset.coordinationLinkForm, event.target);
@@ -1145,6 +1203,10 @@ document.addEventListener("change", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  if (event.target.matches("[data-coordinate-note-input]")) {
+    coordinationNoteDrafts.set(event.target.dataset.coordinateNoteInput, event.target.value);
+    return;
+  }
   if (event.target.matches("[data-coordinate-link-input]")) {
     coordinationLinkDrafts.set(event.target.dataset.coordinateLinkInput, event.target.value);
     return;
