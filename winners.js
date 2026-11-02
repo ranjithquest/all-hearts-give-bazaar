@@ -312,6 +312,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
     const complete = winners.length > 0 && winners.every(([name]) => isDonated(donationKey(letter, name)));
     const total = winners.reduce((sum, [, amount]) => sum + amount, 0);
     const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
+    const contactName = (STUDIO_ROSTER.find(([, alias]) => `${alias}@microsoft.com` === byEmail)?.[0] || bid?.[1] || by).split(/[,\s&]+/)[0];
     return `
     <article class="winner-card${winners.length ? "" : " winner-card--open"}${complete ? " winner-card--complete" : ""}">
       <div class="winner-card__top" role="button" tabindex="0" data-preview="${escapeHtml(title)}" aria-label="Preview ${escapeHtml(title)}">
@@ -342,7 +343,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       </ul>
       `
       : `<p class="winner-card__none">No winning bid this time</p>`}
-      ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span></p>` : ""}
+      ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span>${byEmail ? `<a class="winner-card__chat" href="https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(byEmail)}" target="_blank" rel="noopener noreferrer" title="Chat with ${escapeHtml(contactName)} on Teams">Chat with ${escapeHtml(contactName)}</a>` : ""}</p>` : ""}
     </article>`;
   }).join("");
   document.querySelector("#winnersEmpty").hidden = rows.length > 0;
