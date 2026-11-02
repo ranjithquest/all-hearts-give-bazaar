@@ -319,15 +319,27 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
     const complete = winners.length > 0 && winners.every(([name]) => isDonated(donationKey(letter, name)));
     const total = winners.reduce((sum, [, amount]) => sum + amount, 0);
     const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
-    const contactName = (STUDIO_ROSTER.find(([, alias]) => `${alias}@microsoft.com` === byEmail)?.[0] || bid?.[1] || by).split(/[,\s&]+/)[0];
     const participants = [...lotContributors(lot, by).map(([, email]) => email), ...winners.map(([name]) => emailFor(name))];
     const missingContacts = participants.some((email) => !email);
     const groupEmails = [...new Set(participants.map((email) => email.toLowerCase()).filter(Boolean))];
+    const contributorName = lot?.team ? bid?.[1] || by : by;
+    const groupMessage = [
+      `🎉 Congratulations, ${contributorName}!`,
+      `"${title}" raised ${formatBidRupees(total)} for good causes.`,
+      "",
+      "A heartfelt thank you to our bid winners:",
+      ...winners.map(([name, amount]) => {
+        const causes = personCauses([donationKey(letter, name)]);
+        return `• ${name} — ${formatBidRupees(amount)}${causes.length ? `\n  Supported: ${listJoin(causes)}` : ""}`;
+      }),
+      "",
+      "Let’s coordinate your gifts or experiences here!",
+    ].join("\n");
     const groupUrl = new URL("https://teams.microsoft.com/l/chat/0/0");
     groupUrl.search = new URLSearchParams({
       users: groupEmails.join(","),
       topicName: `GIVE Bazaar · ${title}`,
-      message: `Hi everyone! Donations are complete 🎉 Let’s coordinate "${title}" here.`,
+      message: groupMessage,
     }).toString();
     return `
     <article class="winner-card${winners.length ? "" : " winner-card--open"}${complete ? " winner-card--complete" : ""}">
@@ -360,8 +372,8 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       `
       : `<p class="winner-card__none">No winning bid this time</p>`}
       ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span><span class="winner-card__chat-actions">
-        ${byEmail ? `<a class="winner-card__chat" href="https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(byEmail)}" target="_blank" rel="noopener noreferrer" title="Chat with ${escapeHtml(contactName)} on Teams">Chat with ${escapeHtml(contactName)}</a>` : ""}
-        ${!missingContacts && groupEmails.length > 2 ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(groupUrl.href)}" target="_blank" rel="noopener noreferrer" title="Open a Teams draft with all winners and contributors. Send the first message to start the chat.">Plan together on Teams</a>` : missingContacts && participants.length > 2 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="Group chat is unavailable because contact details are missing for one or more participants.">Plan together on Teams</span>` : ""}
+        ${!missingContacts && groupEmails.length > 1 ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(groupUrl.href)}" target="_blank" rel="noopener noreferrer" title="Open a Teams draft with all winners and contributors. Send the first message to start the chat.">Let’s plan on Teams</a>` : missingContacts && participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="Planning chat is unavailable because contact details are missing for one or more participants.">Let’s plan on Teams</span>` : ""}
+        ${!missingContacts && groupEmails.length > 1 ? `<small class="winner-card__chat-note">Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.</small>` : ""}
       </span></p>` : ""}
     </article>`;
   }).join("");
