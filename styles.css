@@ -3773,11 +3773,22 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .winner-card__chat:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
 .winner-card__chat:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .winner-card__chat.is-unavailable { color: var(--ink-soft); background: transparent; border-color: var(--paper-deep); opacity: .7; cursor: not-allowed; }
+.winner-card__coordination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; max-width: 180px; }
+.winner-card__coordination:empty { display: none; }
+.winner-card__coordinate { background: transparent; border-color: var(--paper-deep); color: var(--ink); cursor: pointer; font-family: inherit; }
+.winner-card__coordinate:hover { background: #fffaf0; border-color: var(--ink-soft); }
+.winner-card__coordination-status { color: #35694a; font-size: 12px; font-weight: 700; }
+.winner-card__coordination-undo { padding: 3px 0; border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-size: 11px; text-decoration: underline; cursor: pointer; }
+.winner-card__coordination-undo:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.winner-card__coordinate:disabled, .winner-card__coordination-undo:disabled { opacity: .6; cursor: wait; }
+.winner-card__coordination-error { flex-basis: 100%; color: var(--teal-dark); font-size: 11px; line-height: 1.4; text-align: right; }
 @media (max-width: 520px) {
   .winner-card__celebration { flex-wrap: wrap; }
   .winner-card__celebration > span:nth-child(2) { flex-basis: calc(100% - 34px); }
   .winner-card__chat-actions { align-items: flex-start; margin-left: 34px; }
   .winner-card__chat-note { text-align: left; }
+  .winner-card__coordination { justify-content: flex-start; }
+  .winner-card__coordination-error { text-align: left; }
 }
 .winner-card__item strong { display: block; font-size: 16px; line-height: 1.25; }
 .winner-card__item span { color: var(--ink-soft); font-size: 13px; }

@@ -25,6 +25,10 @@ let boardLots = [];
 let vibeStorage = null;
 let donations = new Map();
 const DONATION_KEY_PREFIX = "give-bazaar-donation-";
+const COORDINATION_KEY_PREFIX = "give-bazaar-coordination-";
+let coordination = new Map();
+const coordinationPending = new Set();
+const coordinationErrors = new Map();
 const winnerSlug = (name) => String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const donationKey = (letter, name) => `${(letter || "x").toLowerCase()}-${winnerSlug(name)}`;
 let openPanel = "";
@@ -69,6 +73,9 @@ async function loadBoardLots() {
     donations = new Map(Object.entries(values)
       .filter(([key, value]) => key.startsWith(DONATION_KEY_PREFIX) && value && typeof value === "object")
       .map(([key, value]) => [key.slice(DONATION_KEY_PREFIX.length), value]));
+    coordination = new Map(Object.entries(values)
+      .filter(([key, value]) => key.startsWith(COORDINATION_KEY_PREFIX) && value && typeof value === "object")
+      .map(([key, value]) => [key.slice(COORDINATION_KEY_PREFIX.length).toUpperCase(), value]));
     renderWinners();
     renderHero();
   } catch (error) {
@@ -290,6 +297,56 @@ function buildEntries() {
   return entries.sort((a, b) => letterOf(a).localeCompare(letterOf(b)));
 }
 
+function canCoordinate(lot, bid) {
+  const me = viewerEmail();
+  return !!vibeStorage?.shared && !!me && !vibeStorage.isPublicShare && (isCoordinator()
+    || lotContributors(lot, lot?.contributor || bid[1]).some(([, email]) => email === me)
+    || bid[3].some(([name]) => isViewer(name)));
+}
+
+function coordinationControls(letter, lot, bid) {
+  const marked = coordination.get(letter)?.coordinating === true;
+  const pending = coordinationPending.has(letter);
+  const allowed = canCoordinate(lot, bid);
+  const error = coordinationErrors.get(letter);
+  return `${marked ? `<span class="winner-card__coordination-status" role="status">✓ Coordinating</span>` : ""}
+    ${allowed ? `<button type="button" class="${marked ? "winner-card__coordination-undo" : "winner-card__chat winner-card__coordinate"}" data-coordinate="${escapeHtml(letter)}" data-coordinate-value="${!marked}"${pending ? " disabled" : ""}>${pending ? "Saving…" : marked ? "Undo" : "Mark as coordinating"}</button>` : ""}
+    ${error ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
+}
+
+async function setCoordination(letter, coordinating, button) {
+  if (coordinationPending.has(letter)) return;
+  const entry = buildEntries().find(({ lot, bid }) => (lotLetter(lot?.title) || lotLetter(bid[0])) === letter);
+  if (!entry) {
+    console.warn("Could not find the item to update coordination.");
+    button.closest("[data-coordination]")?.insertAdjacentHTML("beforeend", '<small class="winner-card__coordination-error" role="alert">This item could not be found. Refresh and try again.</small>');
+    return;
+  }
+  const { lot, bid } = entry;
+  const refresh = () => document.querySelectorAll(`[data-coordination="${letter}"]`).forEach((scope) => {
+    scope.innerHTML = coordinationControls(letter, lot, bid);
+  });
+  const fail = (message) => { coordinationErrors.set(letter, message); refresh(); };
+  if (!vibeStorage?.shared || !viewerEmail() || vibeStorage.isPublicShare) return fail("Please open the site signed in to VibeHub to make changes.");
+  if (!canCoordinate(lot, bid)) return fail("Only this item's contributors, winners or organisers can update coordination.");
+  if (!bid[3].length || !bid[3].every(([name]) => isDonated(donationKey(letter, name)))) return fail("Coordination can be marked here once all winners have donated.");
+  coordinationErrors.delete(letter);
+  coordinationPending.add(letter);
+  refresh();
+  try {
+    const record = { letter, coordinating, updatedBy: viewerEmail(), updatedAt: new Date().toISOString() };
+    await vibeStorage.shared.set(COORDINATION_KEY_PREFIX + letter.toLowerCase(), record);
+    coordination.set(letter, record);
+  } catch (error) {
+    console.error("Could not save coordination status.", error);
+    coordinationErrors.set(letter, "Couldn't save the coordination status. Check your connection and try again.");
+  } finally {
+    coordinationPending.delete(letter);
+    refresh();
+    if (document.activeElement === document.body) document.querySelector(`[data-coordinate="${letter}"]`)?.focus({ preventScroll: true });
+  }
+}
+
 let winnersView = "all";
 
 function renderWinners(query = document.querySelector("#winnerSearch")?.value || "") {
@@ -374,6 +431,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span><span class="winner-card__chat-actions">
         ${!missingContacts && groupEmails.length > 1 ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(groupUrl.href)}" target="_blank" rel="noopener noreferrer" title="Open a Teams draft with all winners and contributors. Send the first message to start the chat.">Let’s plan on Teams</a>` : missingContacts && participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="Planning chat is unavailable because contact details are missing for one or more participants.">Let’s plan on Teams</span>` : ""}
         ${!missingContacts && groupEmails.length > 1 ? `<small class="winner-card__chat-note">Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.</small>` : ""}
+        <span class="winner-card__coordination" data-coordination="${escapeHtml(letter)}">${coordinationControls(letter, lot, bid)}</span>
       </span></p>` : ""}
     </article>`;
   }).join("");
@@ -843,6 +901,8 @@ document.addEventListener("keydown", (event) => {
   if (top && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openPreview(top.dataset.preview); }
 });
 document.addEventListener("click", (event) => {
+  const coordinate = event.target.closest("[data-coordinate]");
+  if (coordinate) return setCoordination(coordinate.dataset.coordinate, coordinate.dataset.coordinateValue === "true", coordinate);
   const preview = event.target.closest("[data-preview]");
   if (preview) return openPreview(preview.dataset.preview);
   const toggle = event.target.closest("[data-donate]")?.dataset.donate;
