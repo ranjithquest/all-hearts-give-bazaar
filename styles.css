@@ -4187,11 +4187,12 @@ img.is-img-broken {
 .donate-edit-icon:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .donate-proof-wrap { flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 100%; }
 .donate-proof-wrap .donate-amount-field { display: block; width: 116px; margin: 0; }
-.donate-amount-field[hidden], [data-saved-value][hidden], [data-saved-edit-actions][hidden] { display: none; }
+.donate-amount-field[hidden], [data-saved-value][hidden] { display: none; }
 .donate-proof__value { font-size: 14px; white-space: nowrap; }
-.donate-proof__manual { font-size: 12px; opacity: .75; }
-.donate-amount-edit .donate-submit { width: auto; margin: 0; padding: 10px 24px; }
-[data-saved-edit-actions] { margin-top: 12px; text-align: center; }
+.donate-step .donate-amount-edit { margin: 16px 0; }
+.donate-step .donate-done__actions { gap: 20px; }
+.donate-step .donate-proof-wrap { width: 100%; padding: 10px; border: 1px solid #e6d6b8; border-radius: 12px; background: #fff; }
+.donate-step .donate-proof-wrap .donate-upload__clear { top: -10px; right: -10px; }
 .winner-card__bids .donate-thumbs .donate-thumbs__amount.is-empty { color: #b3261e; }
 .donate-thumbs__spin { width: 18px; height: 18px; border: 2px solid #e4d5b7; border-top-color: var(--teal); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -4282,8 +4283,8 @@ img.is-img-broken {
 .face-card__status.is-done { background: #fffaf0; color: #1f7a45; }
 .face-confetti { position: fixed; inset: 0; z-index: 50; width: 100vw; height: 100vh; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .raised-stage__faces .face-card { animation: none; } }
-a.donate-proof .donate-proof__label { color: #1f7a45; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
-a.donate-proof:hover .donate-proof__label { color: #145c33; }
+a.donate-proof .donate-proof__label { color: var(--ink-soft); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+a.donate-proof:hover .donate-proof__label { color: var(--ink); }
 .face-confetti { z-index: 3; }
 .face-card__art { top: -26px; left: -22px; translate: none; rotate: -14deg; }
 @media (max-width: 760px) {
