@@ -164,6 +164,7 @@ const MAX_PROOFS = 6;
 const proofList = (record) => (record?.proofs?.length ? record.proofs : record?.proof ? [record.proof] : []);
 const proofTotal = (record) => (Array.isArray(record?.amounts) && !record.legacy ? record.amounts.reduce((sum, a) => sum + (Number(a) || 0), 0) : null);
 const MAX_SAVED_PROOFS = 10;
+const EDIT_AMOUNT_ICON = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M17.1813 2.92689C16.029 1.71505 14.1046 1.69077 12.9222 2.87317L3.54735 12.2475C3.21952 12.5754 2.99198 12.9899 2.89142 13.4424L2.0138 17.3923C1.97672 17.5592 2.02748 17.7335 2.14838 17.8544C2.26928 17.9753 2.44356 18.026 2.61044 17.9889L6.53683 17.1157C7.00426 17.0118 7.43237 16.7767 7.77096 16.4381L17.129 7.08003C18.27 5.939 18.2932 4.09631 17.1813 2.92689ZM13.6293 3.58029C14.4142 2.79538 15.6917 2.8115 16.4566 3.61596C17.1947 4.39225 17.1793 5.61548 16.4218 6.37293L15.7506 7.04418L12.958 4.25155L13.6293 3.58029ZM12.2508 4.95864L15.0435 7.7513L7.06385 15.731C6.8597 15.9352 6.60158 16.0769 6.31975 16.1396L3.16044 16.8421L3.86762 13.6593C3.92692 13.3924 4.0611 13.148 4.25444 12.9547L12.2508 4.95864Z" fill="currentColor"/></svg>`;
 // Records from before amounts were tracked count as fully donated; newer ones only once the screenshots add up to the bid.
 function donationState(key) {
   const record = donations.get(key);
@@ -362,19 +363,24 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
       : `<h4>${mine ? "You're" : `${escapeHtml(first)}’s`} part of the way there</h4>
       <p>${mine ? `Donate the remaining ${formatBidRupees(bid - total)} on Benevity, then upload its screenshot here.` : `${escapeHtml(first)} still has ${formatBidRupees(bid - total)} to donate.`}</p>`;
     const full = proofs.length >= MAX_SAVED_PROOFS;
+    const canEdit = mine || isCoordinator();
     return `<div class="donate-done${state.partial ? " donate-done--partial" : ""}">
       ${head}
-      <div class="donate-done__actions">
-        ${proofs.map((url, i) => `<span class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}<span class="donate-proof__label">${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}</span>${amounts[i] != null ? ` · ${formatBidRupees(amounts[i])}` : ""}${url ? "</a>" : "</span>"}</span>`).join("")}
+      <div class="donate-amount-edit">
+        <div class="donate-done__actions">
+          ${proofs.map((url, i) => `<div class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}<span class="donate-proof__label">${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}</span>${url ? "</a>" : "</span>"}
+            <span class="donate-proof__value" data-saved-value>${amounts[i] != null ? `· ${formatBidRupees(amounts[i])}` : ""}</span>
+            ${canEdit ? `<button type="button" class="donate-edit-icon" data-saved-edit="${i}" aria-label="Edit amount for screenshot ${i + 1}" aria-expanded="false" title="Edit amount">${EDIT_AMOUNT_ICON}</button>
+            <label class="donate-amount-field" hidden><span class="sr-only">Amount in rupees for screenshot ${i + 1}</span><input type="number" min="0" step="0.01" required inputmode="decimal" value="${amounts[i] == null ? "" : escapeHtml(amounts[i])}" data-saved-amount aria-label="Amount in rupees for screenshot ${i + 1}" placeholder="Amount in ₹"></label>` : ""}
+          </div>`).join("")}
+        </div>
+        ${canEdit && proofs.length ? `<div data-saved-edit-actions hidden>
+          <p>Enter only the amount applied to this item, excluding Microsoft's match. Use 0 for an extra screenshot of the same donation.</p>
+          <button type="button" class="donate-submit" data-save-amounts="${escapeHtml(key)}">Submit</button>
+        </div>` : ""}
+        <p class="donate-error" data-proof-error role="alert" hidden></p>
       </div>
       ${tally}
-      ${(mine || isCoordinator()) && proofs.length ? `<details class="donate-amount-edit">
-        <summary>Edit amounts</summary>
-        <p>Correct the amount applied to this item, excluding Microsoft's match. Use 0 for an extra screenshot of the same donation so it isn't counted twice.</p>
-        ${proofs.map((_, i) => `<label class="donate-amount-field">Screenshot ${i + 1}<input type="number" min="0" step="0.01" inputmode="decimal" value="${amounts[i] == null ? "" : escapeHtml(amounts[i])}" data-saved-amount aria-label="Amount in rupees for screenshot ${i + 1}" placeholder="Amount in ₹"></label>`).join("")}
-        <button type="button" class="donate-submit" data-save-amounts="${escapeHtml(key)}">Save amounts</button>
-        <p class="donate-error" data-proof-error role="alert" hidden></p>
-      </details>` : ""}
       <p class="donate-error" data-proof-error hidden></p>
       ${mine && !full ? `<button type="button" class="${state.partial ? "donate-submit donate-more" : "donate-link"}" data-replace="${escapeHtml(key)}">Upload more screenshots</button>` : ""}
     </div>`;
@@ -542,6 +548,14 @@ function manualProofAmount(input) {
   return input.value.trim() && input.validity.valid && Number.isFinite(value) && value >= 0 ? value : null;
 }
 
+function openSavedAmount(input) {
+  const row = input.closest(".donate-proof-wrap");
+  input.closest(".donate-amount-field").hidden = false;
+  row.querySelector("[data-saved-value]").hidden = true;
+  row.querySelector("[data-saved-edit]").setAttribute("aria-expanded", "true");
+  input.closest(".donate-amount-edit").querySelector("[data-saved-edit-actions]").hidden = false;
+}
+
 async function saveProofAmounts(key, button) {
   const scope = button.closest(".donate-amount-edit");
   const error = scope.querySelector("[data-proof-error]");
@@ -552,7 +566,10 @@ async function saveProofAmounts(key, button) {
   if (!vibeStorage?.shared || vibeStorage.isPublicShare) return fail("Please open the site signed in to VibeHub to make changes.");
   const inputs = [...scope.querySelectorAll("[data-saved-amount]")];
   const amounts = inputs.map(manualProofAmount);
-  if (amounts.length !== proofList(old).length || amounts.some((amount) => amount == null) || !amounts.some((amount) => amount > 0)) return fail("Enter a valid amount for every screenshot. At least one amount must be greater than 0.");
+  if (amounts.length !== proofList(old).length || amounts.some((amount) => amount == null) || !amounts.some((amount) => amount > 0)) {
+    inputs.filter((_, i) => amounts[i] == null).forEach(openSavedAmount);
+    return fail("Enter a valid amount for every screenshot. At least one amount must be greater than 0.");
+  }
   const total = Math.round(amounts.reduce((sum, amount) => sum + amount, 0) * 100) / 100;
   if (!Number.isFinite(total)) return fail("The total is too large. Check the amounts and try again.");
   button.disabled = true;
@@ -781,20 +798,22 @@ document.addEventListener("click", (event) => {
   if (del) return deleteSavedProof(del.dataset.key, Number(del.dataset.proofDelete), del);
   const saveAmounts = event.target.closest("[data-save-amounts]");
   if (saveAmounts) return saveProofAmounts(saveAmounts.dataset.saveAmounts, saveAmounts);
+  const savedEdit = event.target.closest("[data-saved-edit]");
+  if (savedEdit) {
+    const input = savedEdit.closest(".donate-proof-wrap").querySelector("[data-saved-amount]");
+    openSavedAmount(input);
+    input.focus();
+    input.select();
+    return;
+  }
   const editAmount = event.target.closest("[data-proof-edit]");
-  const finishAmount = event.target.closest("[data-proof-edit-done]");
-  if (editAmount || finishAmount) {
-    const button = editAmount || finishAmount;
-    const scope = button.closest(".donate-inline");
-    const index = Number(editAmount ? button.dataset.proofEdit : button.dataset.proofEditDone);
+  if (editAmount) {
+    const scope = editAmount.closest(".donate-inline");
+    const index = Number(editAmount.dataset.proofEdit);
     const item = scope.proofItems?.[index];
     if (!item) return;
-    if (finishAmount) {
-      const input = button.closest("[data-proof-control]").querySelector("input");
-      if (!input.reportValidity()) return;
-    }
-    item.editing = !!editAmount;
-    const control = button.closest("[data-proof-control]");
+    item.editing = true;
+    const control = editAmount.closest("[data-proof-control]");
     control.innerHTML = proofAmountControl(item, index);
     control.querySelector("input, button")?.focus();
     return;
@@ -893,9 +912,9 @@ function updateProofTally(scope) {
 
 const proofNote = (item) => (item.edited ? (item.amount == null ? "Enter a valid amount." : `Manually entered${item.read != null ? ` · detected ${formatBidRupees(item.read)}` : ""}`) : item.reading ? "Reading amount… or enter it manually." : item.amount != null ? "Detected amount · edit if incorrect" : "Couldn't read the amount. Enter it manually.");
 function proofAmountControl(item, index) {
-  if (item.editing) return `<label class="donate-thumbs__amount"><i aria-hidden="true">₹</i><input type="number" min="0" step="0.01" required inputmode="decimal" value="${item.amount ?? ""}" data-proof-amount="${index}" aria-label="Amount in rupees for screenshot ${index + 1}" placeholder="Amount"></label><button type="button" class="donate-link" data-proof-edit-done="${index}">Done</button>`;
+  if (item.editing) return `<label class="donate-thumbs__amount"><i aria-hidden="true">₹</i><input type="number" min="0" step="0.01" required inputmode="decimal" value="${item.amount ?? ""}" data-proof-amount="${index}" aria-label="Amount in rupees for screenshot ${index + 1}" placeholder="Amount"></label>`;
   const amount = item.amount != null ? formatBidRupees(item.amount) : item.reading ? '<i class="donate-thumbs__spin" aria-hidden="true"></i>' : "Not detected";
-  return `<b class="donate-thumbs__value">${amount}</b><button type="button" class="donate-link" data-proof-edit="${index}" aria-label="Edit amount for screenshot ${index + 1}">Edit</button>`;
+  return `<b class="donate-thumbs__value">${amount}</b><button type="button" class="donate-edit-icon" data-proof-edit="${index}" aria-label="Edit amount for screenshot ${index + 1}" title="Edit amount">${EDIT_AMOUNT_ICON}</button>`;
 }
 function renderProofThumbs(scope, warning = "") {
   const items = scope.proofItems || [];
