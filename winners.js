@@ -691,7 +691,7 @@ function renderHero() {
     const completed = people.filter((p) => p.keys.every(isDonated));
     const commitmentCount = completed.filter((p) => p.keys.some((key) => donations.get(key)?.commitmentAccepted)).length;
     const doneCount = completed.length - commitmentCount;
-    counter.innerHTML = `<b>${doneCount} of ${people.length}</b> bid winners have donated${commitmentCount ? ` · ${commitmentCount} ${commitmentCount === 1 ? "has an accepted commitment" : "have accepted commitments"}` : ""}`;
+    counter.innerHTML = `<b>${doneCount} of ${people.length}</b> bid winners have donated`;
   }
   const row = document.querySelector("#contributorRow");
   if (!row) return;
