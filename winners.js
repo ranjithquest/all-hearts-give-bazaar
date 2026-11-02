@@ -29,6 +29,7 @@ const COORDINATION_KEY_PREFIX = "give-bazaar-coordination-";
 let coordination = new Map();
 const coordinationPending = new Set();
 const coordinationErrors = new Map();
+const coordinationLinkDrafts = new Map();
 const winnerSlug = (name) => String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const donationKey = (letter, name) => `${(letter || "x").toLowerCase()}-${winnerSlug(name)}`;
 let openPanel = "";
@@ -304,22 +305,132 @@ function canCoordinate(lot, bid) {
     || bid[3].some(([name]) => isViewer(name)));
 }
 
+function teamsGroupUrl(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !["teams.microsoft.com", "teams.cloud.microsoft"].includes(url.hostname) || url.port || url.username || url.password) return "";
+    const path = url.pathname.match(/^\/l\/(chat|message)\/([^/]+)(?:\/([^/]+))?\/?$/);
+    if (!path) return "";
+    const chatId = decodeURIComponent(path[2]);
+    if (!/^19:[^\s/?#\\]+$/.test(chatId) || /@thread\.tacv2$/i.test(chatId)) return "";
+    if (path[1] === "chat" && path[3] && path[3] !== "conversations") return "";
+    if (path[1] === "message") {
+      if (!/^\d+$/.test(path[3] || "")) return "";
+      const context = url.searchParams.get("context");
+      if (!/@(?:thread\.v2|unq\.gbl\.spaces)$/i.test(chatId) && (!context || JSON.parse(context)?.contextType !== "chat")) return "";
+    }
+    // A copied message link contains the chat ID; open the chat rather than the message.
+    const chat = new URL(`/l/chat/${encodeURIComponent(chatId)}/conversations`, url.origin);
+    const tenantId = url.searchParams.get("tenantId");
+    if (tenantId) chat.searchParams.set("tenantId", tenantId);
+    return chat.href;
+  } catch (error) {
+    if (error instanceof TypeError || error instanceof URIError || error instanceof SyntaxError) return "";
+    throw error;
+  }
+}
+
 function coordinationControls(letter, lot, bid) {
   const record = coordination.get(letter);
   const marked = record?.coordinating === true;
-  const markedBy = String(record?.updatedBy || "").trim().toLowerCase();
+  const markedBy = String(record?.markedBy || record?.updatedBy || "").trim().toLowerCase();
   const markerName = STUDIO_ROSTER.find(([, alias]) => `${alias}@microsoft.com` === markedBy)?.[0]
     || [...lotContributors(lot, lot?.contributor || bid[1]), ...bid[3].map(([name]) => [name, emailFor(name)])].find(([, email]) => email === markedBy)?.[0]
     || markedBy;
   const pending = coordinationPending.has(letter);
   const allowed = canCoordinate(lot, bid);
   const error = coordinationErrors.get(letter);
-  return `${marked ? `<span class="winner-card__coordination-status" role="status"${markedBy ? ` title="Marked by ${escapeHtml(markerName)}" aria-label="Coordinating, marked by ${escapeHtml(markerName)}"` : ""}>${markedBy ? avatar(markerName, markedBy) : ""}<span>✓ Coordinating</span></span>` : ""}
-    ${allowed ? `<button type="button" class="${marked ? "winner-card__coordination-undo" : "winner-card__chat winner-card__coordinate"}" data-coordinate="${escapeHtml(letter)}" data-coordinate-value="${!marked}"${pending ? " disabled" : ""}>${pending ? "Saving…" : marked ? "Undo" : "Mark as coordinating"}</button>` : ""}
-    ${error ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
+  if (!marked && !allowed && !error) return "";
+  return `<div class="winner-card__coordination-summary">${marked ? `<span class="winner-card__coordination-status" role="status"${markedBy ? ` title="Marked by ${escapeHtml(markerName)}" aria-label="Coordinating, marked by ${escapeHtml(markerName)}"` : ""}>${markedBy ? avatar(markerName, markedBy) : ""}<span>✓ Coordinating</span></span>` : ""}
+    ${allowed ? `<button type="button" class="${marked ? "winner-card__coordination-undo" : "winner-card__chat winner-card__coordinate"}" data-coordinate="${escapeHtml(letter)}" data-coordinate-value="${!marked}"${pending ? " disabled" : ""}>${pending ? "Saving…" : marked ? "Undo" : "Mark as coordinating"}</button>` : ""}</div>
+    ${allowed && !marked ? '<small class="winner-card__chat-note">Let the organisers know you’ve started planning your gift or experience.</small>' : ""}
+    ${allowed && (marked || record?.groupUrl) && !coordinationLinkDrafts.has(letter) ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-link="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.groupUrl ? "Edit group link" : "Add group link"}</button>` : ""}
+    ${error && !(allowed && coordinationLinkDrafts.has(letter)) ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
 }
 
-async function setCoordination(letter, coordinating, button) {
+function coordinationActions(letter, lot, bid) {
+  const title = lot?.title || bid[0];
+  const by = lot?.contributor || bid[1];
+  const winners = bid[3];
+  const participants = [...lotContributors(lot, by).map(([, email]) => email), ...winners.map(([name]) => emailFor(name))];
+  const missingContacts = participants.some((email) => !email);
+  const groupEmails = [...new Set(participants.map((email) => email.toLowerCase()).filter(Boolean))];
+  const groupMessage = [
+    `🎉 Congratulations, ${lot?.team ? bid[1] || by : by}!`,
+    `"${title}" raised ${formatBidRupees(winners.reduce((sum, [, amount]) => sum + amount, 0))} for good causes.`,
+    "",
+    "A heartfelt thank you to our bid winners:",
+    ...winners.map(([name, amount]) => {
+      const causes = personCauses([donationKey(letter, name)]);
+      return `• ${name} — ${formatBidRupees(amount)}${causes.length ? `\n  Supported: ${listJoin(causes)}` : ""}`;
+    }),
+    "",
+    "Let’s coordinate your gifts or experiences here!",
+  ].join("\n");
+  const draftUrl = new URL("https://teams.microsoft.com/l/chat/0/0");
+  draftUrl.search = new URLSearchParams({ users: groupEmails.join(","), topicName: `GIVE Bazaar · ${title}`, message: groupMessage }).toString();
+  const record = coordination.get(letter);
+  const savedUrl = teamsGroupUrl(record?.groupUrl);
+  const available = !!savedUrl || (!record?.groupUrl && !missingContacts && groupEmails.length > 1);
+  const label = savedUrl ? "View group" : record?.groupUrl ? "Group link unavailable" : "Let’s plan on Teams";
+  const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : `Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.`;
+  const allowed = canCoordinate(lot, bid);
+  const editing = allowed && coordinationLinkDrafts.has(letter);
+  const pending = coordinationPending.has(letter);
+  const error = coordinationErrors.get(letter);
+  return `<div class="winner-card__plan-action">
+      ${available ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(savedUrl || draftUrl.href)}" target="_blank" rel="noopener noreferrer" title="${savedUrl ? "Open the saved Teams group." : "Open a Teams draft with all winners and contributors. Send the first message to start the chat."}">${label}</a><small class="winner-card__chat-note">${note}</small>` : participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="${record?.groupUrl ? "The saved group link needs to be updated." : "Planning chat is unavailable because contact details are missing for one or more participants."}">${label}</span>${record?.groupUrl ? `<small class="winner-card__chat-note">${note}</small>` : ""}` : ""}
+    </div>
+    <div class="winner-card__coordination" data-coordination="${escapeHtml(letter)}">${coordinationControls(letter, lot, bid)}</div>
+    ${editing ? `<form class="winner-card__group-form" data-coordination-link-form="${escapeHtml(letter)}" novalidate>
+      <label for="group-link-${letter}">Teams group link</label>
+      <input id="group-link-${letter}" type="url" data-coordinate-link-input="${escapeHtml(letter)}" value="${escapeHtml(coordinationLinkDrafts.get(letter))}" placeholder="Paste your Teams link" aria-describedby="group-link-help-${letter}${error ? ` group-link-error-${letter}` : ""}"${error ? ' aria-invalid="true"' : ""}${pending ? " disabled" : ""}>
+      <small id="group-link-help-${letter}" class="winner-card__chat-note">In your Teams group, copy a link to a message and paste it here. Everyone will see “View group”.</small>
+      <div class="winner-card__group-form-actions"><button type="submit" class="winner-card__chat"${pending ? " disabled" : ""}>${pending ? "Saving…" : "Save group link"}</button><button type="button" class="winner-card__coordination-undo" data-coordinate-link-cancel="${letter}"${pending ? " disabled" : ""}>Cancel</button>${record?.groupUrl ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-link-remove="${letter}"${pending ? " disabled" : ""}>Remove link</button>` : ""}</div>
+      ${error ? `<small id="group-link-error-${letter}" class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}
+    </form>` : ""}`;
+}
+
+function refreshCoordination(letter) {
+  const entry = buildEntries().find(({ lot, bid }) => (lotLetter(lot?.title) || lotLetter(bid[0])) === letter);
+  if (entry) document.querySelectorAll(`[data-coordination-actions="${letter}"]`).forEach((scope) => {
+    scope.innerHTML = coordinationActions(letter, entry.lot, entry.bid);
+  });
+}
+
+function editCoordinationLink(letter, open) {
+  if (coordinationPending.has(letter)) return;
+  const entry = buildEntries().find(({ lot, bid }) => (lotLetter(lot?.title) || lotLetter(bid[0])) === letter);
+  if (!entry || !canCoordinate(entry.lot, entry.bid)) {
+    coordinationErrors.set(letter, "Only this item's contributors, winners or organisers can update coordination.");
+    refreshCoordination(letter);
+    return;
+  }
+  coordinationErrors.delete(letter);
+  if (open) coordinationLinkDrafts.set(letter, coordination.get(letter)?.groupUrl || "");
+  else coordinationLinkDrafts.delete(letter);
+  refreshCoordination(letter);
+  document.querySelector(open ? `[data-coordinate-link-input="${letter}"]` : `[data-coordinate-link="${letter}"]`)?.focus({ preventScroll: true });
+}
+
+function setCoordination(letter, coordinating, button) {
+  return saveCoordination(letter, { coordinating }, button);
+}
+
+function saveCoordinationLink(letter, form, remove = false) {
+  const value = form.querySelector("[data-coordinate-link-input]").value;
+  coordinationLinkDrafts.set(letter, value);
+  const groupUrl = remove ? "" : teamsGroupUrl(value);
+  if (!remove && !groupUrl) {
+    coordinationErrors.set(letter, "Paste a link to your existing Teams chat or a message in that chat, not the planning draft link.");
+    refreshCoordination(letter);
+    document.querySelector(`[data-coordinate-link-input="${letter}"]`)?.focus({ preventScroll: true });
+    return;
+  }
+  return saveCoordination(letter, { groupUrl }, form.querySelector('button[type="submit"]'));
+}
+
+async function saveCoordination(letter, changes, button) {
   if (coordinationPending.has(letter)) return;
   const entry = buildEntries().find(({ lot, bid }) => (lotLetter(lot?.title) || lotLetter(bid[0])) === letter);
   if (!entry) {
@@ -328,9 +439,7 @@ async function setCoordination(letter, coordinating, button) {
     return;
   }
   const { lot, bid } = entry;
-  const refresh = () => document.querySelectorAll(`[data-coordination="${letter}"]`).forEach((scope) => {
-    scope.innerHTML = coordinationControls(letter, lot, bid);
-  });
+  const refresh = () => refreshCoordination(letter);
   const fail = (message) => { coordinationErrors.set(letter, message); refresh(); };
   if (!vibeStorage?.shared || !viewerEmail() || vibeStorage.isPublicShare) return fail("Please open the site signed in to VibeHub to make changes.");
   if (!canCoordinate(lot, bid)) return fail("Only this item's contributors, winners or organisers can update coordination.");
@@ -339,16 +448,24 @@ async function setCoordination(letter, coordinating, button) {
   coordinationPending.add(letter);
   refresh();
   try {
-    const record = { letter, coordinating, updatedBy: viewerEmail(), updatedAt: new Date().toISOString() };
+    const old = coordination.get(letter);
+    const now = new Date().toISOString();
+    const record = { ...old, letter, ...changes, updatedBy: viewerEmail(), updatedAt: now };
+    if (changes.coordinating === true) { record.markedBy = viewerEmail(); record.markedAt = now; }
+    else if (old?.coordinating && !old.markedBy && old.updatedBy) { record.markedBy = old.updatedBy; record.markedAt = old.updatedAt; }
     await vibeStorage.shared.set(COORDINATION_KEY_PREFIX + letter.toLowerCase(), record);
     coordination.set(letter, record);
+    if (changes.groupUrl !== undefined) coordinationLinkDrafts.delete(letter);
   } catch (error) {
     console.error("Could not save coordination status.", error);
-    coordinationErrors.set(letter, "Couldn't save the coordination status. Check your connection and try again.");
+    coordinationErrors.set(letter, `Couldn't save ${changes.groupUrl !== undefined ? "the group link" : "the coordination status"}. Check your connection and try again.`);
   } finally {
     coordinationPending.delete(letter);
     refresh();
-    if (document.activeElement === document.body) document.querySelector(`[data-coordinate="${letter}"]`)?.focus({ preventScroll: true });
+    if (document.activeElement === document.body) {
+      const scope = document.querySelector(`[data-coordination-actions="${letter}"]`);
+      scope?.querySelector(`[data-coordinate-link-input], ${changes.groupUrl !== undefined ? ".winner-card__group" : "[data-coordinate]"}`)?.focus({ preventScroll: true });
+    }
   }
 }
 
@@ -381,28 +498,6 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
     const complete = winners.length > 0 && winners.every(([name]) => isDonated(donationKey(letter, name)));
     const total = winners.reduce((sum, [, amount]) => sum + amount, 0);
     const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
-    const participants = [...lotContributors(lot, by).map(([, email]) => email), ...winners.map(([name]) => emailFor(name))];
-    const missingContacts = participants.some((email) => !email);
-    const groupEmails = [...new Set(participants.map((email) => email.toLowerCase()).filter(Boolean))];
-    const contributorName = lot?.team ? bid?.[1] || by : by;
-    const groupMessage = [
-      `🎉 Congratulations, ${contributorName}!`,
-      `"${title}" raised ${formatBidRupees(total)} for good causes.`,
-      "",
-      "A heartfelt thank you to our bid winners:",
-      ...winners.map(([name, amount]) => {
-        const causes = personCauses([donationKey(letter, name)]);
-        return `• ${name} — ${formatBidRupees(amount)}${causes.length ? `\n  Supported: ${listJoin(causes)}` : ""}`;
-      }),
-      "",
-      "Let’s coordinate your gifts or experiences here!",
-    ].join("\n");
-    const groupUrl = new URL("https://teams.microsoft.com/l/chat/0/0");
-    groupUrl.search = new URLSearchParams({
-      users: groupEmails.join(","),
-      topicName: `GIVE Bazaar · ${title}`,
-      message: groupMessage,
-    }).toString();
     return `
     <article class="winner-card${winners.length ? "" : " winner-card--open"}${complete ? " winner-card--complete" : ""}">
       <div class="winner-card__top" role="button" tabindex="0" data-preview="${escapeHtml(title)}" aria-label="Preview ${escapeHtml(title)}">
@@ -433,10 +528,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       </ul>
       `
       : `<p class="winner-card__none">No winning bid this time</p>`}
-      ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span><span class="winner-card__chat-actions">
-        <span class="winner-card__plan-action">${!missingContacts && groupEmails.length > 1 ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(groupUrl.href)}" target="_blank" rel="noopener noreferrer" title="Open a Teams draft with all winners and contributors. Send the first message to start the chat.">Let’s plan on Teams</a><small class="winner-card__chat-note">Opens a draft ${groupEmails.length > 2 ? "group" : "chat"} on Teams for you to start.</small>` : missingContacts && participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="Planning chat is unavailable because contact details are missing for one or more participants.">Let’s plan on Teams</span>` : ""}</span>
-        <span class="winner-card__coordination" data-coordination="${escapeHtml(letter)}">${coordinationControls(letter, lot, bid)}</span>
-      </span></p>` : ""}
+      ${complete ? `<div class="winner-card__celebration"><div class="winner-card__celebration-heading"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span></div><div class="winner-card__chat-actions" data-coordination-actions="${escapeHtml(letter)}">${coordinationActions(letter, lot, bid)}</div></div>` : ""}
     </article>`;
   }).join("");
   document.querySelector("#winnersEmpty").hidden = rows.length > 0;
@@ -460,8 +552,8 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
         const url = lotImageUrl(proof);
         return `<div class="donate-proof-wrap">${url ? `<a class="donate-proof" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="Payment screenshot ${i + 1}">` : `<span class="donate-proof">`}<span class="donate-proof__label">${proofs.length > 1 ? `Screenshot ${i + 1}` : "View screenshot"}</span>${url ? "</a>" : "</span>"}
         <span class="donate-proof__value" data-saved-value>${amounts[i] != null ? `· ${formatBidRupees(amounts[i])}${!panelReplacing && proofAmountEdited(record, i) ? " (edited)" : ""}` : ""}</span>
-        ${panelReplacing && canEditProof(record, i) ? `<button type="button" class="donate-edit-icon" data-saved-edit="${i}" aria-label="Edit amount for screenshot ${i + 1}" aria-expanded="false" title="Edit amount">${EDIT_AMOUNT_ICON}</button>
-        <label class="donate-amount-field" hidden><span class="sr-only">Amount in rupees for screenshot ${i + 1}</span><input type="number" min="0" step="0.01" required inputmode="decimal" value="${amounts[i] == null ? "" : escapeHtml(amounts[i])}" data-saved-amount="${i}" aria-label="Amount in rupees for screenshot ${i + 1}" placeholder="Amount in ₹"></label>
+        ${panelReplacing && canEditProof(record, i) ? `<label class="donate-amount-field" hidden><span class="sr-only">Amount in rupees for screenshot ${i + 1}</span><input type="number" min="0" step="0.01" required inputmode="decimal" value="${amounts[i] == null ? "" : escapeHtml(amounts[i])}" data-saved-amount="${i}" aria-label="Amount in rupees for screenshot ${i + 1}" placeholder="Amount in ₹"></label>
+        <button type="button" class="donate-edit-icon" data-saved-edit="${i}" aria-label="Edit amount for screenshot ${i + 1}" aria-expanded="false" title="Edit amount">${EDIT_AMOUNT_ICON}</button>
         <button type="button" class="donate-upload__clear" data-proof-delete="${i}" data-key="${escapeHtml(key)}" aria-label="Remove screenshot ${i + 1}">×</button>` : ""}
         </div>`;
       }).join("")}
@@ -675,7 +767,11 @@ function openSavedAmount(input) {
   const row = input.closest(".donate-proof-wrap");
   input.closest(".donate-amount-field").hidden = false;
   row.querySelector("[data-saved-value]").hidden = true;
-  row.querySelector("[data-saved-edit]").setAttribute("aria-expanded", "true");
+  const button = row.querySelector("[data-saved-edit]");
+  button.setAttribute("aria-expanded", "true");
+  button.setAttribute("aria-label", `Done editing amount for screenshot ${Number(input.dataset.savedAmount) + 1}`);
+  button.title = "Done editing amount";
+  button.innerHTML = DONE_AMOUNT_ICON;
   updateProofTally(input.closest(".donate-inline"));
 }
 
@@ -901,10 +997,21 @@ document.querySelector("#auctionDialog")?.addEventListener("click", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches("[data-saved-amount], [data-proof-amount]")) {
+    event.preventDefault();
+    event.target.closest(".donate-proof-wrap, .donate-proof-control").querySelector("[data-saved-edit], [data-proof-edit-done]")?.click();
+    return;
+  }
   const top = event.target.closest?.("[data-preview]");
   if (top && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); openPreview(top.dataset.preview); }
 });
 document.addEventListener("click", (event) => {
+  const editLink = event.target.closest("[data-coordinate-link]");
+  if (editLink) return editCoordinationLink(editLink.dataset.coordinateLink, true);
+  const cancelLink = event.target.closest("[data-coordinate-link-cancel]");
+  if (cancelLink) return editCoordinationLink(cancelLink.dataset.coordinateLinkCancel, false);
+  const removeLink = event.target.closest("[data-coordinate-link-remove]");
+  if (removeLink) return saveCoordinationLink(removeLink.dataset.coordinateLinkRemove, removeLink.closest("form"), true);
   const coordinate = event.target.closest("[data-coordinate]");
   if (coordinate) return setCoordination(coordinate.dataset.coordinate, coordinate.dataset.coordinateValue === "true", coordinate);
   const preview = event.target.closest("[data-preview]");
@@ -934,10 +1041,35 @@ document.addEventListener("click", (event) => {
   if (saveAmounts && !saveAmounts.closest(".donate-inline").proofItems?.length) return saveProofAmounts(saveAmounts.dataset.saveAmounts, saveAmounts);
   const savedEdit = event.target.closest("[data-saved-edit]");
   if (savedEdit) {
-    const input = savedEdit.closest(".donate-proof-wrap").querySelector("[data-saved-amount]");
+    const row = savedEdit.closest(".donate-proof-wrap");
+    const input = row.querySelector("[data-saved-amount]");
+    if (savedEdit.getAttribute("aria-expanded") === "true") {
+      if (!input.reportValidity()) return;
+      input.closest(".donate-amount-field").hidden = true;
+      const value = row.querySelector("[data-saved-value]");
+      value.textContent = `· ${formatBidRupees(manualProofAmount(input))}`;
+      value.hidden = false;
+      savedEdit.setAttribute("aria-expanded", "false");
+      savedEdit.setAttribute("aria-label", `Edit amount for screenshot ${Number(input.dataset.savedAmount) + 1}`);
+      savedEdit.title = "Edit amount";
+      savedEdit.innerHTML = EDIT_AMOUNT_ICON;
+      return;
+    }
     openSavedAmount(input);
     input.focus();
     input.select();
+    return;
+  }
+  const doneAmount = event.target.closest("[data-proof-edit-done]");
+  if (doneAmount) {
+    const control = doneAmount.closest("[data-proof-control]");
+    const input = control.querySelector("input");
+    if (!input.reportValidity()) return;
+    const index = Number(doneAmount.dataset.proofEditDone);
+    const item = control.closest(".donate-inline").proofItems[index];
+    item.editing = false;
+    control.innerHTML = proofAmountControl(item, index);
+    control.querySelector("button")?.focus({ preventScroll: true });
     return;
   }
   const editAmount = event.target.closest("[data-proof-edit]");
@@ -971,6 +1103,11 @@ document.addEventListener("click", (event) => {
     renderWinners(filter);
     document.querySelector("#winnersList")?.closest(".results-block")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+});
+document.addEventListener("submit", (event) => {
+  if (!event.target.matches("[data-coordination-link-form]")) return;
+  event.preventDefault();
+  if (!coordinationPending.has(event.target.dataset.coordinationLinkForm)) saveCoordinationLink(event.target.dataset.coordinationLinkForm, event.target);
 });
 ["dragenter", "dragover"].forEach((type) => document.addEventListener(type, (event) => {
   event.target.closest?.(".donate-upload")?.classList.add("is-dragover");
@@ -1008,6 +1145,10 @@ document.addEventListener("change", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  if (event.target.matches("[data-coordinate-link-input]")) {
+    coordinationLinkDrafts.set(event.target.dataset.coordinateLinkInput, event.target.value);
+    return;
+  }
   if (event.target.matches("[data-saved-amount]")) {
     updateProofTally(event.target.closest(".donate-inline"));
     return;
@@ -1054,8 +1195,9 @@ function updateProofTally(scope) {
 }
 
 const proofNote = (item) => (item.edited ? (item.amount == null ? "Enter a valid amount." : "") : item.reading ? "Reading amount… or enter it manually." : item.amount != null ? "Edit if detected amount is incorrect" : "Couldn't read the amount. Enter it manually.");
+const DONE_AMOUNT_ICON = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="m4 10 4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 function proofAmountControl(item, index) {
-  if (item.editing) return `<label class="donate-thumbs__amount"><i aria-hidden="true">₹</i><input type="number" min="0" step="0.01" required inputmode="decimal" value="${item.amount ?? ""}" data-proof-amount="${index}" aria-label="Amount in rupees for screenshot ${index + 1}" placeholder="Amount"></label>`;
+  if (item.editing) return `<label class="donate-thumbs__amount"><i aria-hidden="true">₹</i><input type="number" min="0" step="0.01" required inputmode="decimal" value="${item.amount ?? ""}" data-proof-amount="${index}" aria-label="Amount in rupees for screenshot ${index + 1}" placeholder="Amount"></label><button type="button" class="donate-edit-icon" data-proof-edit-done="${index}" aria-label="Done editing amount for screenshot ${index + 1}" title="Done editing amount">${DONE_AMOUNT_ICON}</button>`;
   const amount = item.amount != null ? formatBidRupees(item.amount) : item.reading ? '<i class="donate-thumbs__spin" aria-hidden="true"></i>' : "Not detected";
   return `<b class="donate-thumbs__value">${amount}</b><button type="button" class="donate-edit-icon" data-proof-edit="${index}" aria-label="Edit amount for screenshot ${index + 1}" title="Edit amount">${EDIT_AMOUNT_ICON}</button>`;
 }
