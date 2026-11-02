@@ -342,6 +342,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       </ul>
       `
       : `<p class="winner-card__none">No winning bid this time</p>`}
+      ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span></p>` : ""}
     </article>`;
   }).join("");
   document.querySelector("#winnersEmpty").hidden = rows.length > 0;
