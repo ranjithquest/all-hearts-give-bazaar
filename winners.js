@@ -397,7 +397,7 @@ function coordinationActions(letter, lot, bid) {
     ${editingNote ? `<form class="winner-card__group-form" data-coordination-note-form="${escapeHtml(letter)}" novalidate>
       <label for="coordination-note-${letter}">Comments</label>
       <textarea id="coordination-note-${letter}" rows="3" required data-coordinate-note-input="${escapeHtml(letter)}" placeholder="How is your planning going?" aria-describedby="coordination-note-help-${letter}${error ? ` coordination-note-error-${letter}` : ""}"${error ? ' aria-invalid="true"' : ""}${pending ? " disabled" : ""}>${escapeHtml(coordinationNoteDrafts.get(letter))}</textarea>
-      <small id="coordination-note-help-${letter}" class="winner-card__chat-note">Optional — share a planning update with everyone. This is one shared note for the item.</small>
+      <small id="coordination-note-help-${letter}" class="winner-card__chat-note">Share a planning update with everyone so the Bazaar team knows things are underway.</small>
       <div class="winner-card__group-form-actions"><button type="submit" class="winner-card__chat"${pending ? " disabled" : ""}>${pending ? "Saving…" : "Save comments"}</button><button type="button" class="winner-card__coordination-undo" data-coordinate-note-cancel="${letter}"${pending ? " disabled" : ""}>Cancel</button>${record?.statusNote ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-note-remove="${letter}"${pending ? " disabled" : ""}>Remove comments</button>` : ""}</div>
       ${error ? `<small id="coordination-note-error-${letter}" class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}
     </form>` : ""}

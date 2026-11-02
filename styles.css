@@ -3785,6 +3785,7 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .winner-card__coordinate:hover { background: #fffaf0; border-color: var(--ink-soft); }
 .winner-card__coordination-status { display: inline-flex; align-items: center; gap: 6px; color: #35694a; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .winner-card__coordination-undo { padding: 3px 0; border: 0; background: transparent; color: var(--ink-soft); font: inherit; font-size: 11px; text-decoration: underline; cursor: pointer; }
+.winner-card__coordination-links .winner-card__coordination-undo { padding: 0; line-height: 1.4; }
 .winner-card__coordination-undo:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .winner-card__coordinate:disabled, .winner-card__coordination-undo:disabled { opacity: .6; cursor: wait; }
 .winner-card__coordination-error { flex-basis: 100%; color: var(--teal-dark); font-size: 11px; line-height: 1.4; }
