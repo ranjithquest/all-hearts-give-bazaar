@@ -158,8 +158,8 @@ function viewerEmail() {
   return String((vibeStorage || window.vibehub?.storage)?.viewerEmail || "").toLowerCase();
 }
 
-const PROOF_LABEL_EMPTY = `<strong><u>Browse files</u> or drag and drop</strong><small>Your Benevity payment screenshots (PNG or JPG). Add one for each donation.</small>`;
-const PROOF_LABEL_MORE = `<strong><u>Add another screenshot</u></strong><small>Donated to more than one NGO? Add each receipt.</small>`;
+const PROOF_LABEL_EMPTY = `<strong><u>Browse files</u> or drag and drop</strong><small>Your Benevity payment screenshots (PNG or JPG). Add one for each donation.</small><small>Amount not detected? Tap the pencil to enter it.</small>`;
+const PROOF_LABEL_MORE = `<strong><u>Add another screenshot</u></strong><small>Donated to more than one NGO? Add each receipt.</small><small>Amount not detected? Tap the pencil to enter it.</small>`;
 const MAX_PROOFS = 6;
 const proofList = (record) => (record?.proofs?.length ? record.proofs : record?.proof ? [record.proof] : []);
 function canEditProof(record, index) {
@@ -399,7 +399,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     </div>
     <div class="donate-step">
       <h4><b>2</b>Upload your payment screenshots</h4>
-      <p>Check the detected amounts and edit them if needed. Enter only the amount applied to this item, excluding Microsoft's match. Use 0 for another screenshot of the same donation.</p>
+      <p>Check the detected amounts and edit them if needed. Enter only the amount applied to this item, excluding Microsoft's match.</p>
       ${saved ? savedProofsHtml : ""}
       <ul class="donate-thumbs" data-proof-thumbs hidden></ul>
       ${saved && savedTotal != null ? `<p class="donate-tally ${savedTotal >= amount ? "is-ok" : "is-partial"}" data-proof-tally>${savedTotal >= amount ? "✓ " : ""}Total ${formatBidRupees(savedTotal)} of ${formatBidRupees(amount)}</p>` : `<p class="donate-tally" data-proof-tally hidden></p>`}
