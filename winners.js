@@ -154,6 +154,13 @@ function emailFor(name) {
   return "";
 }
 
+function lotContributors(lot, contributor) {
+  const team = String(lot?.team || "").split(/[,|]/).map((m) => m.trim()).filter(Boolean);
+  return team.length
+    ? team.map((m) => { const email = m.includes("@") ? m.toLowerCase() : `${m.toLowerCase()}@microsoft.com`; const name = STUDIO_ROSTER.find(([, a]) => `${a}@microsoft.com` === email)?.[0] || m; return [name, email]; })
+    : [[contributor, emailFor(contributor) || (lot?.avatarEmail || lot?.email || "").toLowerCase()]];
+}
+
 function viewerEmail() {
   return String((vibeStorage || window.vibehub?.storage)?.viewerEmail || "").toLowerCase();
 }
@@ -313,6 +320,15 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
     const total = winners.reduce((sum, [, amount]) => sum + amount, 0);
     const byEmail = (lot?.avatarEmail || lot?.email || "").toLowerCase() || emailFor(by);
     const contactName = (STUDIO_ROSTER.find(([, alias]) => `${alias}@microsoft.com` === byEmail)?.[0] || bid?.[1] || by).split(/[,\s&]+/)[0];
+    const participants = [...lotContributors(lot, by).map(([, email]) => email), ...winners.map(([name]) => emailFor(name))];
+    const missingContacts = participants.some((email) => !email);
+    const groupEmails = [...new Set(participants.map((email) => email.toLowerCase()).filter(Boolean))];
+    const groupUrl = new URL("https://teams.microsoft.com/l/chat/0/0");
+    groupUrl.search = new URLSearchParams({
+      users: groupEmails.join(","),
+      topicName: `GIVE Bazaar · ${title}`,
+      message: `Hi everyone! Donations are complete 🎉 Let’s coordinate "${title}" here.`,
+    }).toString();
     return `
     <article class="winner-card${winners.length ? "" : " winner-card--open"}${complete ? " winner-card--complete" : ""}">
       <div class="winner-card__top" role="button" tabindex="0" data-preview="${escapeHtml(title)}" aria-label="Preview ${escapeHtml(title)}">
@@ -343,7 +359,10 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
       </ul>
       `
       : `<p class="winner-card__none">No winning bid this time</p>`}
-      ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span>${byEmail ? `<a class="winner-card__chat" href="https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(byEmail)}" target="_blank" rel="noopener noreferrer" title="Chat with ${escapeHtml(contactName)} on Teams">Chat with ${escapeHtml(contactName)}</a>` : ""}</p>` : ""}
+      ${complete ? `<p class="winner-card__celebration"><span aria-hidden="true">🎉</span><span><strong>Congratulations, winners!</strong>Get ready for your gift or experience!</span><span class="winner-card__chat-actions">
+        ${byEmail ? `<a class="winner-card__chat" href="https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(byEmail)}" target="_blank" rel="noopener noreferrer" title="Chat with ${escapeHtml(contactName)} on Teams">Chat with ${escapeHtml(contactName)}</a>` : ""}
+        ${!missingContacts && groupEmails.length > 2 ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(groupUrl.href)}" target="_blank" rel="noopener noreferrer" title="Open a Teams draft with all winners and contributors. Send the first message to start the chat.">Plan together on Teams</a>` : missingContacts && participants.length > 2 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="Group chat is unavailable because contact details are missing for one or more participants.">Plan together on Teams</span>` : ""}
+      </span></p>` : ""}
     </article>`;
   }).join("");
   document.querySelector("#winnersEmpty").hidden = rows.length > 0;
@@ -733,10 +752,7 @@ function openPreview(title) {
   $("auctionTitle").textContent = title;
   const contributor = lot?.contributor || bid?.[1] || "";
   $("auctionContributor").textContent = contributor;
-  const team = String(lot?.team || "").split(/[,|]/).map((m) => m.trim()).filter(Boolean);
-  const people = team.length
-    ? team.map((m) => { const email = m.includes("@") ? m.toLowerCase() : `${m.toLowerCase()}@microsoft.com`; const name = STUDIO_ROSTER.find(([, a]) => `${a}@microsoft.com` === email)?.[0] || m; return [name, email]; })
-    : [[contributor, emailFor(contributor) || (lot?.avatarEmail || lot?.email || "").toLowerCase()]];
+  const people = lotContributors(lot, contributor);
   $("auctionContributorAvatars").innerHTML = contributor ? people.slice(0, 4).map(([n, e]) => avatar(n, e)).join("") : "";
   $("auctionDescription").textContent = lot?.description || "";
   $("auctionLocation").textContent = city;
