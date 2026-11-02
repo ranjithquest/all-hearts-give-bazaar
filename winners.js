@@ -161,11 +161,14 @@ function viewerEmail() {
 const PROOF_LABEL = `<strong><u>Browse files</u> or drag and drop</strong><small>Your Benevity payment screenshots (PNG or JPG). Add one for each donation.</small>`;
 const MAX_PROOFS = 6;
 const proofList = (record) => (record?.proofs?.length ? record.proofs : record?.proof ? [record.proof] : []);
+function canManageDonation(info) {
+  return !!info && isViewer(info.name, info.letter) && !vibeStorage?.isPublicShare;
+}
 function canEditProof(record, index) {
   const proof = proofList(record)[index];
   if (!Number.isInteger(index) || !proof) return false;
   const uploader = String(proof.viewer || record?.submittedBy || "").trim().toLowerCase();
-  return !!uploader && uploader === viewerEmail() && !vibeStorage?.isPublicShare;
+  return !!uploader && uploader === viewerEmail() && canManageDonation(record);
 }
 const proofTotal = (record) => (Array.isArray(record?.amounts) && !record.legacy ? record.amounts.reduce((sum, a) => sum + (Number(a) || 0), 0) : null);
 const MAX_SAVED_PROOFS = 10;
@@ -368,7 +371,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
       }).join("")}
     </div>
   </div>`;
-  if (state.record && !panelReplacing) {
+  if (state.record && (!panelReplacing || !canManageDonation({ name, letter }))) {
     const total = proofTotal(record);
     const bid = state.bid || Number(amount) || 0;
     const tally = total == null ? (state.done && bid ? `<p class="donate-tally is-ok">✓ ${formatBidRupees(bid)} of ${formatBidRupees(bid)} donated</p>` : "") : `<p class="donate-tally ${state.done ? "is-ok" : "is-partial"}">${state.done ? "✓ " : ""}${formatBidRupees(total)} of ${formatBidRupees(bid)} donated${state.partial ? ` · ${formatBidRupees(bid - total)} to go` : ""}</p>`;
@@ -384,7 +387,7 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
       ${savedProofsHtml}
       ${tally}
       <p class="donate-error" data-proof-error hidden></p>
-      ${canEdit || (mine && !full) ? `<button type="button" class="${state.partial ? "donate-submit donate-more" : "donate-link"}" data-replace="${escapeHtml(key)}">Upload or edit screenshots</button>` : ""}
+      ${canManageDonation({ name, letter }) && (canEdit || !full) ? `<button type="button" class="${state.partial ? "donate-submit donate-more" : "donate-link"}" data-replace="${escapeHtml(key)}">Upload or edit screenshots</button>` : ""}
     </div>`;
   }
   const savedProofs = state.record ? proofList(record) : [];
@@ -466,6 +469,7 @@ async function submitProof(key, scope) {
   const error = scope.querySelector("[data-proof-error]");
   if (!info || !files.length) return;
   const fail = (msg) => { error.textContent = msg; error.hidden = false; updateProofTally(scope); };
+  if (!canManageDonation(info)) return fail("Only the bid winner can upload or edit screenshots for this donation.");
   const check = proofCheck(scope);
   if (!check.ready) return fail(check.message);
   const savedChanges = savedAmountChanges(scope, donations.get(key));
@@ -585,6 +589,7 @@ async function saveProofAmounts(key, button) {
   const fail = (message) => { error.textContent = message; error.hidden = false; };
   const old = donations.get(key);
   if (!old) return fail("This donation could not be found. Refresh and try again.");
+  if (!canManageDonation(findBid(key))) return fail("Only the bid winner can upload or edit screenshots for this donation.");
   if (!vibeStorage?.shared || vibeStorage.isPublicShare) return fail("Please open the site signed in to VibeHub to make changes.");
   const inputs = [...scope.querySelectorAll("[data-saved-amount]")];
   if (!inputs.length || inputs.some((input) => !canEditProof(old, Number(input.dataset.savedAmount)))) return fail("Only the uploader can edit a screenshot's amount.");
@@ -817,7 +822,16 @@ document.addEventListener("click", (event) => {
     return;
   }
   const replace = event.target.closest("[data-replace]")?.dataset.replace;
-  if (replace) { panelReplacing = true; renderWinners(); return; }
+  if (replace) {
+    if (!canManageDonation(findBid(replace))) {
+      const error = event.target.closest(".donate-inline")?.querySelector("[data-proof-error]");
+      if (error) { error.textContent = "Only the bid winner can upload or edit screenshots for this donation."; error.hidden = false; }
+      return;
+    }
+    panelReplacing = true;
+    renderWinners();
+    return;
+  }
   if (event.target.closest("[data-donate-cancel]")) { panelReplacing = false; renderWinners(); return; }
   const del = event.target.closest("[data-proof-delete]");
   if (del) return deleteSavedProof(del.dataset.key, Number(del.dataset.proofDelete), del);
