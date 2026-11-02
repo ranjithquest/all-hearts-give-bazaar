@@ -349,11 +349,11 @@ function coordinationControls(letter, lot, bid) {
   if (!marked && !allowed && !error) return "";
   return `<div class="winner-card__coordination-summary">${marked ? `<span class="winner-card__coordination-status" role="status"${markedBy ? ` title="Marked by ${escapeHtml(markerName)}" aria-label="Coordinating, marked by ${escapeHtml(markerName)}"` : ""}>${markedBy ? avatar(markerName, markedBy) : ""}<span>✓ Coordinating</span></span>` : ""}
     ${allowed ? `<button type="button" class="${marked ? "winner-card__coordination-undo" : "winner-card__chat winner-card__coordinate"}" data-coordinate="${escapeHtml(letter)}" data-coordinate-value="${!marked}"${pending ? " disabled" : ""}>${pending ? "Saving…" : marked ? "Undo" : "Mark as coordinating"}</button>` : ""}</div>
-    ${allowed ? `<div class="winner-card__coordination-links">
-      ${(marked || record?.groupUrl) && coordinationEditors.get(letter) !== "link" ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-link="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.groupUrl ? "Edit Teams group link" : "Add Teams group link"}</button>` : ""}
+    ${allowed && !marked ? `<div class="winner-card__coordination-links">
+      ${coordinationEditors.get(letter) !== "link" ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-link="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.groupUrl ? "Edit Teams group link" : "Add Teams group link"}</button>` : ""}
       ${coordinationEditors.get(letter) !== "note" ? `<button type="button" class="winner-card__coordination-undo" data-coordinate-note="${escapeHtml(letter)}"${pending ? " disabled" : ""}>${record?.statusNote ? "Edit comments" : "Add comments"}</button>` : ""}
     </div>` : ""}
-    ${error && !(allowed && coordinationEditors.has(letter)) ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
+    ${error && !(allowed && !marked && coordinationEditors.has(letter)) ? `<small class="winner-card__coordination-error" role="alert">${escapeHtml(error)}</small>` : ""}`.trim();
 }
 
 function coordinationActions(letter, lot, bid) {
@@ -378,19 +378,20 @@ function coordinationActions(letter, lot, bid) {
   const draftUrl = new URL("https://teams.microsoft.com/l/chat/0/0");
   draftUrl.search = new URLSearchParams({ users: groupEmails.join(","), topicName: `${title} · GIVE Bazaar`, message: groupMessage }).toString();
   const record = coordination.get(letter);
+  const marked = record?.coordinating === true;
   const savedUrl = teamsGroupUrl(record?.groupUrl);
-  const available = !!savedUrl || (!record?.groupUrl && !missingContacts && groupEmails.length > 1);
+  const available = !!savedUrl || (!marked && !record?.groupUrl && !missingContacts && groupEmails.length > 1);
   const label = savedUrl ? "View group" : record?.groupUrl ? "Group link unavailable" : "Let’s plan on Teams";
-  const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : `Drafts a ${groupEmails.length > 2 ? "group" : "chat"} for you on Teams.`;
+  const note = savedUrl ? "Opens the Teams group shared for this item." : record?.groupUrl ? "Ask a contributor to update the saved group link." : marked ? "Planning is already underway." : `Drafts a ${groupEmails.length > 2 ? "group" : "chat"} for you on Teams.`;
   const allowed = canCoordinate(lot, bid);
-  const editing = allowed && coordinationEditors.get(letter) === "link";
-  const editingNote = allowed && coordinationEditors.get(letter) === "note";
+  const editing = allowed && !marked && coordinationEditors.get(letter) === "link";
+  const editingNote = allowed && !marked && coordinationEditors.get(letter) === "note";
   const pending = coordinationPending.has(letter);
   const error = coordinationErrors.get(letter);
   const noteBy = String(record?.statusNoteBy || "").trim().toLowerCase();
   const noteAuthor = coordinationPersonName(noteBy, lot, bid);
   return `<div class="winner-card__plan-action">
-      ${available ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(savedUrl || draftUrl.href)}" target="_blank" rel="noopener noreferrer" title="${savedUrl ? "Open the saved Teams group." : "Open a Teams draft with all winners and contributors. Send the first message to start the chat."}">${label}</a><small class="winner-card__chat-note">${note}</small>` : participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="${record?.groupUrl ? "The saved group link needs to be updated." : "Planning chat is unavailable because contact details are missing for one or more participants."}">${label}</span>${record?.groupUrl ? `<small class="winner-card__chat-note">${note}</small>` : ""}` : ""}
+      ${available ? `<a class="winner-card__chat winner-card__group" href="${escapeHtml(savedUrl || draftUrl.href)}" target="_blank" rel="noopener noreferrer" title="${savedUrl ? "Open the saved Teams group." : "Open a Teams draft with all winners and contributors. Send the first message to start the chat."}">${label}</a><small class="winner-card__chat-note">${note}</small>` : participants.length > 1 ? `<span class="winner-card__chat is-unavailable" role="link" aria-disabled="true" title="${record?.groupUrl ? "The saved group link needs to be updated." : marked ? "Already coordinating. Use Undo to start planning again." : "Planning chat is unavailable because contact details are missing for one or more participants."}">${label}</span>${record?.groupUrl || marked ? `<small class="winner-card__chat-note">${note}</small>` : ""}` : ""}
     </div>
     <div class="winner-card__coordination" data-coordination="${escapeHtml(letter)}">${coordinationControls(letter, lot, bid)}</div>
     ${record?.statusNote ? `<div class="winner-card__planning-note"><strong>Planning update</strong><p>${escapeHtml(record.statusNote)}</p>${noteBy ? `<small class="winner-card__note-author">${avatar(noteAuthor, noteBy)}Updated by ${escapeHtml(noteAuthor)}</small>` : ""}</div>` : ""}
