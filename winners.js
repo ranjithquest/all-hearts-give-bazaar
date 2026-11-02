@@ -85,7 +85,7 @@ const DONATION_CAUSES = [
 ];
 
 const WINNING_BIDS = [
-  ["An exclusive photo shoot for you or your family", "Kishore Chamua, CS Jasweth, S Dhondye", "Hyderabad", [["Deepak Menon", 100000], ["Shveta Verma", 80000]]],
+  ["An exclusive photo shoot for you or your family", "Kishore Chamua, CS Jasweth, S Dhondye", "Hyderabad", [["Deepak Menon", 100000], ["Shveta Verma", 79000]]],
   ["Hand-illustrated festive lifafa set", "Tanuja", "Bangalore", [["Sarah Zaki", 10000], ["Amit Patil", 3000], ["Ankur Jhawar", 3000]]],
   ["A Debangshu Moulik 1/15 Limited Ed. Print", "Eemon Roy", "All locations", [["Mohak Gulati", 6000]]],
   ["Bengaluru Book Collection", "Anant Tambade", "Bangalore", [["Ninad", 5500]]],
@@ -320,12 +320,13 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
           const key = donationKey(letter, name);
           const state = donationState(key);
           const done = state.done;
+          const doneLabel = state.record?.commitmentAccepted ? "✓ Commitment accepted" : "✓ Donated";
           const mine = isViewer(name, letter);
           const coordView = !mine && !!state.record && isCoordinator();
           const open = (mine || coordView) && openPanel === key;
           const action = mine || coordView
-            ? `<button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? `✓ Donated${isCoordinator() ? `<i class="donate-caret" aria-hidden="true">${open ? "▴" : "▾"}</i>` : ""}` : open ? "Close" : state.partial ? `${formatBidRupees(state.bid - state.total)} to go` : "Donate"}</button>`
-            : `<span class="donate-status${done ? " donate-status--done" : state.partial ? " donate-status--partial" : ""}">${done ? "✓ Donated" : state.partial ? "Partly donated" : "Yet to donate"}</span>`;
+            ? `<button type="button" class="donate-btn${done ? " donate-btn--done" : ""}" data-donate="${escapeHtml(key)}" aria-expanded="${open}">${done ? `${doneLabel}${isCoordinator() ? `<i class="donate-caret" aria-hidden="true">${open ? "▴" : "▾"}</i>` : ""}` : open ? "Close" : state.partial ? `${formatBidRupees(state.bid - state.total)} to go` : "Donate"}</button>`
+            : `<span class="donate-status${done ? " donate-status--done" : state.partial ? " donate-status--partial" : ""}">${done ? doneLabel : state.partial ? "Partly donated" : "Yet to donate"}</span>`;
           return `<li class="${q && name.toLowerCase().includes(q) ? "is-match" : ""}${open ? " is-open" : ""}${mine ? " is-mine" : ""}"><span>${avatar(name)}${escapeHtml(name)}${mine ? `<em class="you-tag">You</em>` : ""}</span><b>${formatBidRupees(amount)}</b>${action}</li>${open ? `<li class="donate-inline">${donationPanel({ key, letter, title, by, byEmail, name, amount, mine })}</li>` : ""}`;
         }).join("")}
       </ul>
@@ -350,11 +351,13 @@ function donationPanel({ key, letter, title, by, byEmail, name, amount, mine = t
     const amounts = Array.isArray(record.amounts) ? record.amounts : [];
     const total = proofTotal(record);
     const bid = state.bid || Number(amount) || 0;
+    const acceptedCommitment = !!record.commitmentAccepted;
     const edited = isCoordinator() && (record.readAmounts || []).some((read, i) => read != null && Number(read) !== Number(amounts[i]));
-    const tally = total == null ? (state.done && bid ? `<p class="donate-tally is-ok">✓ ${formatBidRupees(bid)} of ${formatBidRupees(bid)} donated</p>` : "") : `<p class="donate-tally ${state.done ? "is-ok" : "is-partial"}">${state.done ? "✓ " : ""}${formatBidRupees(total)} of ${formatBidRupees(bid)} donated${state.partial ? ` · ${formatBidRupees(bid - total)} to go` : ""}${edited ? `<small>Amounts edited after auto-read: ${(record.readAmounts || []).map((r) => (r == null ? "—" : formatBidRupees(r))).join(", ")}</small>` : ""}</p>`;
+    const tally = total == null ? (state.done && bid ? `<p class="donate-tally is-ok">✓ ${formatBidRupees(bid)} of ${formatBidRupees(bid)} donated</p>` : "") : `<p class="donate-tally ${state.done ? "is-ok" : "is-partial"}">${state.done ? "✓ " : ""}${formatBidRupees(total)} of ${formatBidRupees(bid)} ${acceptedCommitment ? "committed" : "donated"}${state.partial ? ` · ${formatBidRupees(bid - total)} to go` : ""}${edited ? `<small>Amounts edited after auto-read: ${(record.readAmounts || []).map((r) => (r == null ? "—" : formatBidRupees(r))).join(", ")}</small>` : ""}</p>`;
     const head = state.done
       ? `<span class="donate-done__tick" aria-hidden="true">✓</span>
-      <h4>${escapeHtml(first)}’s donation is in. Thank you!</h4>
+      <h4>${escapeHtml(first)}’s ${acceptedCommitment ? "commitment is accepted" : "donation is in"}. Thank you!</h4>
+      ${acceptedCommitment ? `<p>${escapeHtml(record.commitmentNote || "Scheduled payroll commitment accepted by the organising team; payment has not yet been received.")}</p>` : ""}
       <p>${ORGANISERS_LINE_CAP} will coordinate with ${escapeHtml(byFirst)} to get the gift to ${mine ? "you" : escapeHtml(first)}.</p>`
       : `<h4>${mine ? "You're" : `${escapeHtml(first)}’s`} part of the way there</h4>
       <p>${mine ? `Donate the remaining ${formatBidRupees(bid - total)} on Benevity, then upload its screenshot here.` : `${escapeHtml(first)} still has ${formatBidRupees(bid - total)} to donate.`}</p>`;
@@ -638,8 +641,10 @@ function renderHero() {
   }
   const counter = document.querySelector("#donatedCount");
   if (counter) {
-    const doneCount = people.filter((p) => p.keys.every(isDonated)).length;
-    counter.innerHTML = `<b>${doneCount} of ${people.length}</b> bid winners have donated`;
+    const completed = people.filter((p) => p.keys.every(isDonated));
+    const commitmentCount = completed.filter((p) => p.keys.some((key) => donations.get(key)?.commitmentAccepted)).length;
+    const doneCount = completed.length - commitmentCount;
+    counter.innerHTML = `<b>${doneCount} of ${people.length}</b> bid winners have donated${commitmentCount ? ` · ${commitmentCount} ${commitmentCount === 1 ? "has an accepted commitment" : "have accepted commitments"}` : ""}`;
   }
   const row = document.querySelector("#contributorRow");
   if (!row) return;
