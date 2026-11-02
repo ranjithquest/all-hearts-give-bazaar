@@ -320,7 +320,7 @@ function renderWinners(query = document.querySelector("#winnerSearch")?.value ||
           const key = donationKey(letter, name);
           const state = donationState(key);
           const done = state.done;
-          const doneLabel = state.record?.commitmentAccepted ? "✓ Commitment accepted" : "✓ Donated";
+          const doneLabel = "✓ Donated";
           const mine = isViewer(name, letter);
           const coordView = !mine && !!state.record && isCoordinator();
           const open = (mine || coordView) && openPanel === key;
