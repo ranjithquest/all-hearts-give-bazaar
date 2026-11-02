@@ -3759,9 +3759,9 @@ a.cause-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgb
 .winner-card__celebration-heading > span:nth-child(2) { min-width: 0; }
 .winner-card__celebration strong { display: block; color: var(--ink); font-size: 14px; }
 .winner-card__chat-actions { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: center; gap: 16px; width: 100%; }
-.winner-card__plan-action, .winner-card__coordination { display: flex; flex: 0 1 180px; flex-direction: column; align-items: center; gap: 6px; width: 180px; max-width: 100%; }
+.winner-card__plan-action, .winner-card__coordination { display: flex; flex: 0 1 215px; flex-direction: column; align-items: center; gap: 12px; width: 215px; max-width: 100%; }
 .winner-card__plan-action:empty { display: none; }
-.winner-card__chat-note { max-width: 180px; color: var(--ink-soft); font-size: 11px; line-height: 1.4; }
+.winner-card__chat-note { max-width: 100%; color: var(--ink-soft); font-size: 11px; line-height: 1.4; }
 .winner-card__chat {
   flex-shrink: 0;
   padding: 8px 12px;
